@@ -191,67 +191,53 @@ turbo e luz nos bits previstos. Os offsets de `leStatus` **saem da lista de pend
 `light` = 1) e `1C 02` apagou (bit = 0), confirmado em 0,2 s. Swing continua sem teste — o
 equipamento da bancada não tem.
 
-**O display não é reportado, e só sabemos apagar.** O bit `display` (f[2] bit 0) ficou **em 1
-nos 18 quadros**, com 5 comandos enviados no meio — e todos foram `0A 02`, nunca `0A 01`.
-Isso acontece porque o app decidia ligar/desligar a partir desse bit travado em 1: concluía
-sempre "está aceso" e mandava sempre apagar.
+**Sobre o display, a conclusão anterior estava errada.** Eu havia escrito que o equipamento
+não reporta esse estado. Reporta: no log de 17:48 o bit foi de 1 para 0 quando o **controle
+físico** foi usado, e voltou. O bit não ter mudado nos testes anteriores tinha outra causa —
+a polaridade, logo abaixo.
 
-Cruzando com o relato de bancada — *apagou uma vez e nunca mais acendeu*, e neste teste
-*nenhuma vez apagou* — a leitura é:
+### ⚠️ A POLARIDADE NÃO É A MESMA EM TODOS OS COMANDOS (resolvido em 10/09/2026)
 
-- `10 / 2` **apaga**, e funciona;
-- neste teste o display **já estava apagado** desde antes, então mandar apagar de novo não
-  mudou nada visível;
-- **o valor que acende é desconhecido.** O `1` que eu havia suposto não acende.
+Defeito de raiz, e explica quase tudo que parecia lentidão ou comando perdido.
 
-Por isso o Display deixou de ser chave (mentiria, e gerava o "sem confirmação de chv:display
-depois de 10 s" repetido no log) e virou botão que manda `10 / 2`. ⚠️ **Hoje ele só apaga.**
-Para achar o valor que acende existe a **varredura** no painel: com o display apagado, põe
-`10` no campo de comando e toca em *Varrer 0–9* — ela manda 0..9 de 2,5 em 2,5 s e escreve
-cada um no log; basta olhar o equipamento e ver em qual valor ele reage.
+No log de 17:48, três transições seguidas e coerentes:
 
-**`underV` é décimo de volt.** Veio **205**, constante em todo quadro — não é volt inteiro
-(205 V não existe aqui) nem sinalizador: é **20,5 V**, corte plausível para 24 V. A leitura
-agora aceita as duas escalas.
+| Comando enviado | f[2] depois | O app mostrava |
+|---|---|---|
+| `01 02` rotulado *Desligar* | `9B` (bit7 = 1) | Ligado |
+| `01 01` rotulado *Ligar* | `1B` (bit7 = 0) | Desligado |
+| `01 02` rotulado *Desligar* | `9B` (bit7 = 1) | Ligado |
 
-Dois defeitos meus que o log expôs:
+Mandar "Ligar" levava o bit a 0. **Confirmado no equipamento**: tocar em Ligar no app
+*desligava* o ar. Ou seja, o bit de status está certo (1 = ligado) e **os valores é que
+estavam trocados**.
 
-1. **`GATT operation already in progress`** — apareceu duas vezes. Web Bluetooth aceita uma
-   operação por vez, e o poll de 3 s batia em cima do toque do usuário: **a escrita morria e o
-   comando se perdia**. É candidato forte a explicar "tem que tentar várias vezes" em
-   qualquer controle, não só no display. Resolvido com uma fila (`naFila`) que serializa toda
-   escrita.
-2. **`confirmado em 0.0 s`** — confirmação falsa. Tocar num controle que já estava no valor
-   atual fazia `valor()` casar contra o quadro **antigo** e declarar confirmado sem o aparelho
-   ter dito nada. Agora só confirma se chegou quadro novo depois da marca (`ultimoQuadroEm`).
+A convenção real, medida:
 
-### Segundo log de bancada (10/09/2026, 17:25–17:27)
+| Comando | valor 1 | valor 2 |
+|---|---|---|
+| **energia** (`1`) | desliga | liga |
+| **display** (`10`) | apaga | acende |
+| **luz** (`28`) | acende | apaga |
 
-**A fila resolveu as colisões.** Nenhum `GATT operation already in progress` no log inteiro,
-contra duas ocorrências no anterior.
+**Não é uniforme** — a luz é o contrário das outras duas. Não uniformizar: o firmware é assim.
+Está tudo na constante `ENERGIA` e no mapa `CHAVES`, no topo do script.
 
-**A varredura foi rodada no comando 255 por engano** — o campo `Cmd` já nasce preenchido e o
-botão ficava do lado dizendo só "Varrer 0–9". Agora o rótulo mostra **qual comando** vai
-varrer (`Varrer cmd 10`) e acompanha o campo enquanto se digita.
+Com isso, o que parecia inexplicável se encaixa sem nenhum chute novo:
 
-⚠️ **Ligar não ligou, nos dois logs.** Em ambos, "Desligar" e "Ligar" foram enviados com ~1 s
-de intervalo e o aparelho terminou **desligado**, permanecendo assim por 40 s no primeiro log:
+- os `0A 02` do log mandavam **acender** um display que já estava aceso → nada acontecia, e
+  daí *"nenhuma vez o display apagou"*;
+- na versão anterior um toque rápido chegava a mandar `0A 01` = apagar → foi **a vez que
+  apagou**;
+- os toques seguintes voltavam a mandar apagar → *"só não ligava novamente"*;
+- e o "Desligar seguido de Ligar" que terminava em `1B`: o ar ficava **ligado**, e o app é
+  que mostrava desligado.
 
-| | Desligar | Ligar | Estado depois |
-|---|---|---|---|
-| log 1 | 17:09:03 | 17:09:07 | `1B` = desligado, por 40 s |
-| log 2 | 17:27:42 | 17:27:43 | `1B` = desligado até o fim |
+Por isso o Display **voltou a ser chave liga/desliga**: o estado é reportado, e agora com a
+polaridade certa.
 
-Duas leituras possíveis, e ainda não dá para escolher:
-
-1. `1 / 1` não liga — mesma assinatura do display, onde o `2` funciona e o `1` não;
-2. a placa **não honra comandos colados** — processou o "Desligar" e ignorou o "Ligar" que
-   veio 1 s depois.
-
-A segunda tem apoio: o display também mostra a placa demorando a processar. Por isso a fila
-passou a deixar **300 ms de folga entre comandos** (`FOLGA_MS`) — imperceptível ao toque, e dá
-respiro para ela. Se mesmo assim "Ligar" não ligar num teste isolado, cai a hipótese 2 e
-sobra a 1, que a varredura do comando `1` resolve.
+⚠️ Sobra uma dedução não confirmada: o display seguir a mesma convenção da energia veio por
+inferência, não por teste. A energia foi confirmada no equipamento.
 
 ### Retorno da bancada (10/09/2026) — o que o equipamento mostrou
 
