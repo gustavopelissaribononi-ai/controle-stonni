@@ -237,6 +237,11 @@ input{font-family:inherit;font-size:16px}
 .linha-op[aria-pressed="true"] .chave::after{left:21px;background:var(--sobre-ciano)}
 .linha-op:disabled{opacity:.35;cursor:not-allowed}
 
+/* linha de ação: manda o comando e pronto, sem fingir que sabe o estado */
+.acao-txt{flex:none;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--ciano)}
+.linha-op.enviado{border-color:rgba(255,176,32,.55)}
+.linha-op.enviado .acao-txt,.linha-op.enviado .ic{color:var(--alerta)}
+
 /* segmentado 2 opções (ar interno/externo) */
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--afundado);
   border:1px solid var(--linha);border-radius:var(--r);padding:4px}
@@ -558,9 +563,12 @@ input{font-family:inherit;font-size:16px}
           <button class="linha-op chv" type="button" data-chave="luz" aria-pressed="false">
             <svg class="ic"><use href="#i-luz"/></svg><span>Luz</span><i class="chave"></i>
           </button>
-          <button class="linha-op chv" type="button" data-chave="display" aria-pressed="false">
-            <svg class="ic"><use href="#i-tela"/></svg><span>Display</span><i class="chave"></i>
+          <button class="linha-op acao" id="btnDisplay" type="button">
+            <svg class="ic"><use href="#i-tela"/></svg><span>Display</span>
+            <b class="acao-txt">Alternar</b>
           </button>
+          <p class="dica" style="margin:9px 2px 0">O equipamento não informa se o display
+             está aceso, então este botão só alterna — e leva alguns segundos para responder.</p>
 
         </section>
 
@@ -656,10 +664,16 @@ const ABERTURA_MS = 8000;
    do comando de energia (1 = liga, 2 = desliga) — é o único ponto do protocolo
    ainda não confirmado na bancada; se o desligar não responder, é aqui que muda. */
 const CHAVES = {
-  swing:   { cmd:69, lig:1, des:2, campo:'swing'   },
-  luz:     { cmd:28, lig:1, des:2, campo:'light'   },
-  display: { cmd:10, lig:1, des:2, campo:'display' }
+  swing:   { cmd:69, lig:1, des:2, campo:'swing' },
+  luz:     { cmd:28, lig:1, des:2, campo:'light' }   // confirmado na bancada
 };
+
+/* O display NÃO entra nas CHAVES. Na bancada o comando funciona (a tela do
+   equipamento apaga), mas o bit de display do status ficou em 1 nos 18
+   quadros do teste, com 6 comandos enviados no meio. Ou seja: o aparelho não
+   informa esse estado. Uma chave liga/desliga aqui mentiria — vira botão de
+   alternar, que é o que o testador de bancada sempre foi. */
+const DISPLAY = { cmd:10, val:2 };
 
 const FALHAS = {0:'OK',1:'Ocioso',2:'EL/E1',3:'EH/E1',4:'E1',5:'EF',6:'E0',7:'E7',19:'SPv',
   22:'E2',23:'E3',24:'E4',25:'E5',26:'E6',27:'E7',28:'E8',29:'E9',30:'H0',31:'H1',32:'Eb',
@@ -669,6 +683,7 @@ const MODOS = {1:'Refrigerar',2:'Desumidificar',3:'Ventilar',4:'Aquecer'};
 
 let aparelho=null, carTx=null, poll=null, buffer=new Uint8Array(0);
 let ultimo=null, conferido=false, tentandoVoltar=0, timerTemp=null;
+let ultimoQuadroEm = 0;   // quando chegou o último status; usado para confirmar de verdade
 
 const $  = id => document.getElementById(id);
 const hx = b => [...b].map(x=>x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
@@ -737,17 +752,33 @@ function montaAtivacao(n){
   f[6] = (252 + n + TIPO) & 0xFF;
   return f;
 }
-async function escreve(quadro, rotulo){
-  if(!carTx){ log('sem conexão', 'err'); return false; }
-  try{
-    if(carTx.properties.write) await carTx.writeValueWithResponse(quadro.buffer);
-    else await carTx.writeValueWithoutResponse(quadro.buffer);
-    log('TX  ' + hx(quadro) + (rotulo ? '   ' + rotulo : ''), 'tx');
-    return true;
-  }catch(e){
-    log('falha ao escrever: ' + e.message, 'err');
-    return false;
-  }
+/* Web Bluetooth aceita UMA operação GATT por vez. Com o poll de 3 s
+   correndo por baixo, um toque do usuário caía em cima dele e a escrita
+   morria com "GATT operation already in progress" -- comando perdido, e o
+   motorista tocando de novo achando que o botão não pegou. Apareceu duas
+   vezes no log de bancada. A fila serializa: cada escrita espera a
+   anterior. */
+let filaGatt = Promise.resolve();
+function naFila(tarefa){
+  const proxima = filaGatt.then(tarefa, tarefa);
+  filaGatt = proxima.catch(() => {});
+  return proxima;
+}
+
+function escreve(quadro, rotulo){
+  if(!carTx){ log('sem conexão', 'err'); return Promise.resolve(false); }
+  return naFila(async () => {
+    if(!carTx) return false;                 // caiu enquanto esperava a vez
+    try{
+      if(carTx.properties.write) await carTx.writeValueWithResponse(quadro.buffer);
+      else await carTx.writeValueWithoutResponse(quadro.buffer);
+      log('TX  ' + hx(quadro) + (rotulo ? '   ' + rotulo : ''), 'tx');
+      return true;
+    }catch(e){
+      log('falha ao escrever: ' + e.message, 'err');
+      return false;
+    }
+  });
 }
 const envia = (codigo, valor, rotulo) => escreve(montaQuadro(codigo, valor), rotulo);
 
@@ -774,7 +805,7 @@ function aoNotificar(ev){
     buffer = buffer.slice(fim+2);
     log('RX  ' + hx(quadro), 'rx');
     const st = leStatus(quadro);
-    if(st){ ultimo = st; confere(st); pinta(); }
+    if(st){ ultimo = st; ultimoQuadroEm = Date.now(); confere(st); pinta(); }
   }
 }
 
@@ -825,7 +856,10 @@ function valor(chave, real){
   const o = otim[chave];
   if(!o) return real;
   const seg = ((Date.now() - o.t) / 1000).toFixed(1);
-  if(o.v === real){
+  /* Só vale como confirmação se um quadro NOVO chegou depois da marca. Sem
+     isso, tocar num botão que já estava no valor atual dava "confirmado em
+     0.0 s" sem o aparelho ter dito nada -- aconteceu no log de bancada. */
+  if(o.v === real && ultimoQuadroEm > o.t){
     log('confirmado ' + chave + ' em ' + seg + ' s', 'marco');
     delete otim[chave];
     return real;
@@ -905,15 +939,24 @@ const sistemaDe = v => (v < 18 ? 12 : 24);
 /* Códigos de falha que significam corte por tensão (SPv e SP) */
 const FALHAS_TENSAO = [19, 37];
 
+/* f[9] é a proteção de subtensão, e não vem numa escala só. No equipamento
+   real veio 205, constante em todo quadro -- não é volt inteiro (205 V não
+   existe aqui) nem sinalizador: bate com 20,5 V em décimos, corte plausível
+   para um sistema de 24 V. Aceita as duas escalas e, fora delas, devolve
+   null em vez de inventar um número. */
+function limiteDe(underV, v){
+  if(underV >= 9  && underV <= 32  && underV < v + 6) return underV;      // volts
+  if(underV >= 90 && underV <= 320) return underV / 10;                   // décimos
+  return null;
+}
+const volts = x => (Number.isInteger(x) ? String(x) : x.toFixed(1).replace('.', ','));
+
 function pintaBateria(s){
   const cx = $('bat');
   const v = s.voltage;
   const sistema = sistemaDe(v);
 
-  /* f[9] traz a proteção de subtensão. Só tratamos como limite em volts se o
-     valor for plausível — em algumas placas isso pode vir como sinalizador,
-     e nesse caso mostramos só a tensão, sem inventar um número. */
-  const limite = (s.underV >= 9 && s.underV <= 32 && s.underV < v + 6) ? s.underV : null;
+  const limite = limiteDe(s.underV, v);
 
   const piso = limite ? limite - 2 : (sistema === 12 ? 10 : 20);
   const teto = sistema === 12 ? 15 : 29;
@@ -930,7 +973,7 @@ function pintaBateria(s){
     $('batMarca').style.left = p + '%';
     $('batLimiteTxt').hidden = false;
     $('batLimiteTxt').style.left = Math.min(92, Math.max(8, p)) + '%';
-    $('batLimiteTxt').textContent = 'desliga em ' + limite + ' V';
+    $('batLimiteTxt').textContent = 'desliga em ' + volts(limite) + ' V';
   }else{
     $('batMarca').hidden = true;
     $('batLimiteTxt').hidden = true;
@@ -944,14 +987,14 @@ function pintaBateria(s){
   }else if(limite && v <= limite){
     classe = 'critico';
     estado = 'Abaixo do limite';
-    texto  = 'O ar desliga em ' + limite + ' V para o caminhão não ficar sem partida.';
+    texto  = 'O ar desliga em ' + volts(limite) + ' V para o caminhão não ficar sem partida.';
   }else if(limite && v <= limite + 1){
     classe = 'atencao';
     estado = 'Bateria baixa';
-    texto  = 'Falta pouco para o corte, que acontece em ' + limite + ' V.';
+    texto  = 'Falta pouco para o corte, que acontece em ' + volts(limite) + ' V.';
   }else if(limite){
     estado = 'Bateria em ordem';
-    texto  = 'O ar desliga sozinho em ' + limite + ' V, para o caminhão não ficar sem partida.';
+    texto  = 'O ar desliga sozinho em ' + volts(limite) + ' V, para o caminhão não ficar sem partida.';
   }else{
     estado = 'Sistema de ' + sistema + ' V';
     texto  = 'O ar desliga sozinho se a bateria cair demais.';
@@ -1194,7 +1237,9 @@ function aplicaComandoSim(s, q){
       break;
     case 3:  s.target = val; break;
     case 4:  s.fan = val; break;
-    case 10: s.display  = chave(val); break;
+    /* comando 10 chega, mas o equipamento real não reflete no status —
+       o simulador imita isso e também não mexe em s.display */
+    case 10: break;
     case 28: s.light    = chave(val); break;
     case 69: s.swing    = chave(val); break;
   }
@@ -1208,10 +1253,11 @@ function evoluiSim(s){
   if(s.power && s.comp > 5) { if(Math.random() < .25) s.volt = Math.max(19, s.volt - 1); }
   else if(Math.random() < .30) s.volt = Math.min(25, s.volt + 1);
 
-  if(s.volt <= s.underV){          // proteção de subtensão
+  const corte = s.underV / 10;     // f[9] vem em décimos de volt
+  if(s.volt <= corte){             // proteção de subtensão
     s.power = 0;
     s.fault = 37;                  // SP
-  }else if(s.fault === 37 && s.volt > s.underV + 1){
+  }else if(s.fault === 37 && s.volt > corte + 1){
     s.fault = 0;                   // tensão recuperou; religar é com o motorista
   }
 
@@ -1229,9 +1275,9 @@ function aparelhoDeTeste(){
   const s = {
     power:1, mode:1, fan:3, display:1,
     turbo:0, auto:0, eco:0, sleep:0, swing:1, ion:0, light:1, windSide:0,
-    /* underV 21 = corte típico de um sistema 24 V. É chute plausível do
-       simulador; o valor real vem do equipamento em f[9]. */
-    inlet:29, core:15, comp:9, fanA:2, volt:25, underV:21, fault:0,
+    /* underV 205 = 20,5 V em décimos, exatamente o que o equipamento real
+       devolveu na bancada. */
+    inlet:29, core:15, comp:9, fanA:2, volt:25, underV:205, fault:0,
     timerOn:0, tOpen:0, tClose:0, unit:0, target:22
   };
   let ouvinte = null;
@@ -1490,6 +1536,16 @@ document.querySelector('.marca').addEventListener('click', () => {
 try{
   if(localStorage.getItem('stonni_ar_painel') === '0') $('painelTec').hidden = true;
 }catch(e){}
+
+$('btnDisplay').onclick = async () => {
+  vibra(10);
+  const b = $('btnDisplay'), t = b.querySelector('.acao-txt');
+  b.classList.add('enviado');
+  t.textContent = 'Enviando…';
+  const ok = await envia(DISPLAY.cmd, DISPLAY.val, 'Display alternar');
+  t.textContent = ok ? 'Enviado' : 'Não foi';
+  setTimeout(() => { b.classList.remove('enviado'); t.textContent = 'Alternar'; }, 2500);
+};
 
 $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
 $('btnLimpar').onclick = () => { $('log').innerHTML = ''; };

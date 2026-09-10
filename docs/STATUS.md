@@ -146,6 +146,38 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### Log de bancada com o equipamento (10/09/2026, KT2026050014629)
+
+18 quadros de status reais, todos com **checksum OK**. O que ficou provado:
+
+**O parser está certo.** Ventilador 3/2/1 → `fan` 3/2/1; alvo 25/23/21 → `target` 25/23/21;
+turbo e luz nos bits previstos. Os offsets de `leStatus` **saem da lista de pendências**.
+
+**A convenção de desligar (valor 2) está certa, ao menos para a luz.** `1C 01` acendeu (bit
+`light` = 1) e `1C 02` apagou (bit = 0), confirmado em 0,2 s. Swing continua sem teste — o
+equipamento da bancada não tem.
+
+**O display não é reportado.** O bit `display` (f[2] bit 0) ficou **em 1 nos 18 quadros**,
+com 6 comandos `0A 02` enviados no meio. O comando funciona (a tela do equipamento apaga),
+mas o status não devolve esse estado. Por isso o Display **deixou de ser chave liga/desliga e
+virou botão de alternar** — uma chave ali mentiria, e era o que gerava o "sem confirmação de
+chv:display depois de 10 s" repetido no log.
+
+**`underV` é décimo de volt.** Veio **205**, constante em todo quadro — não é volt inteiro
+(205 V não existe aqui) nem sinalizador: é **20,5 V**, corte plausível para 24 V. A leitura
+agora aceita as duas escalas.
+
+Dois defeitos meus que o log expôs:
+
+1. **`GATT operation already in progress`** — apareceu duas vezes. Web Bluetooth aceita uma
+   operação por vez, e o poll de 3 s batia em cima do toque do usuário: **a escrita morria e o
+   comando se perdia**. É candidato forte a explicar "tem que tentar várias vezes" em
+   qualquer controle, não só no display. Resolvido com uma fila (`naFila`) que serializa toda
+   escrita.
+2. **`confirmado em 0.0 s`** — confirmação falsa. Tocar num controle que já estava no valor
+   atual fazia `valor()` casar contra o quadro **antigo** e declarar confirmado sem o aparelho
+   ter dito nada. Agora só confirma se chegou quadro novo depois da marca (`ultimoQuadroEm`).
+
 ### Retorno da bancada (10/09/2026) — o que o equipamento mostrou
 
 Primeiro teste com o ar de verdade:
@@ -330,14 +362,13 @@ mudou:
       visível de propósito, para a validação de bancada. Devolver `hidden` ao
       `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
       valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
-- [ ] **Validar na bancada o desligar de oscilação / luz / display.** É o único ponto
-      do protocolo não confirmado: o testador só tinha o valor de *ligar*. Adotei
-      `des: 2`, seguindo a convenção do liga/desliga (1 liga, 2 desliga). Se não
-      responder, muda numa linha só — constante `CHAVES` no topo do script. Como o app
-      não tem mais envio bruto, esse teste é feito pelo `bancada/testador-ble.html`.
-- [ ] Confirmar os offsets de `leStatus` com o equipamento ligado. O parser lê o byte
-      2 como estado (onde o cabeçalho sugeriria comprimento). Veio assim do testador;
-      a função `confere()` avisa no console se tensão/ambiente/modo vierem implausíveis.
+- [ ] **Validar o desligar da oscilação (swing).** Luz já foi confirmada na bancada
+      (`1C 01`/`1C 02`); o display saiu das chaves por não ser reportado. Falta só o
+      swing, e o equipamento onde se testou não tem essa função.
+- [x] ~~Confirmar os offsets de `leStatus`~~ — **confirmados** no log de bancada de
+      10/09/2026: ventilador, alvo, turbo e luz bateram exatos, checksum OK em 18 quadros.
+- [ ] **Confirmar que 20,5 V é mesmo o corte** (`underV` = 205 em décimos). O número é
+      plausível e constante, mas ninguém viu o ar cortar nessa tensão ainda.
 - [ ] **Publicar** — Web Bluetooth exige https. Ver seção Publicação; o gargalo é acesso
       ao Cloudflare, não código.
 - [ ] Confirmar a instalação num Android real: botão "Instalar" aparecendo, ícone sem
