@@ -12,14 +12,14 @@
 // ============================================================
 const VERSAO = 'stonni-ar-v2-20260910';
 const CASCA = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon.png',
+  './',
+  './index.html',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/apple-touch-icon.png',
+  './icons/favicon.png',
 ];
 
 self.addEventListener('install', (ev) => {
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (ev) => {
         const copia = res.clone();
         caches.open(VERSAO).then((c) => c.put(req, copia)).catch(() => {});
         return res;
-      }).catch(() => caches.match(req).then((hit) => hit || caches.match('/index.html')))
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))
     );
   }
 });

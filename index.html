@@ -10,9 +10,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Ar-condicionado Stonni — Controle</title>
 
-<link rel="icon" href="/icons/favicon.png" sizes="32x32">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="./icons/favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="manifest" href="./manifest.json">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -296,7 +296,7 @@ input{font-family:inherit;font-size:16px}
 <div class="app">
 
   <header class="topo">
-    <img class="marca" alt="" width="34" height="34" src="/icons/icon-192.png">
+    <img class="marca" alt="" width="34" height="34" src="./icons/icon-192.png">
     <div class="marca-txt">
       <b>Stonni</b>
       <span>Ar-condicionado</span>
@@ -951,7 +951,7 @@ window.addEventListener('appinstalled', () => {
 /* PWA */
 if('serviceWorker' in navigator && location.protocol === 'https:'){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
 </script>
