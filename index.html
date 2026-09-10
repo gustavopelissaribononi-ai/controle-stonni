@@ -501,6 +501,10 @@ const TIPO    = 1;
 
 const TEMP_MIN = 16, TEMP_MAX = 30;
 const POLL_MS  = 3000;
+/* Quanto esperar pela reconexão silenciosa ao abrir o app antes de desistir e
+   mostrar a tela de procurar. gatt.connect() num aparelho fora de alcance fica
+   pendurado sem erro, então o limite tem que vir de fora. */
+const ABERTURA_MS = 8000;
 
 /* Chaves liga/desliga. "lig" veio do testador (validado). "des" segue a convenção
    do comando de energia (1 = liga, 2 = desliga) — é o único ponto do protocolo
@@ -759,12 +763,62 @@ function roteia(){
   if(instalado()){
     $('chip').hidden = false;
     mostraTela(false);
+    reconectaSozinho();
     return;
   }
   $('chip').hidden = true;
   $('telaInstalar').hidden = false;
   $('telaConectar').hidden = true;
   $('telaControle').hidden = true;
+}
+
+/* ==========================================================================
+   RECONEXÃO SILENCIOSA AO ABRIR
+   O motorista não deve ter que tocar em "Procurar aparelho" toda vez.
+   getDevices() devolve os aparelhos que já receberam permissão, e sobre eles
+   dá para chamar gatt.connect() sem gesto nenhum — é o que permite o app
+   abrir já no controle. Se o Chrome não expuser getDevices, se for o primeiro
+   uso, ou se o ar estiver desligado, cai na tela de procurar como antes.
+   ========================================================================== */
+async function reconectaSozinho(){
+  if(!navigator.bluetooth || !navigator.bluetooth.getDevices) return false;
+
+  let lista = [];
+  try{ lista = await navigator.bluetooth.getDevices(); }
+  catch(e){ log('getDevices indisponível: ' + e.message); return false; }
+  if(!lista.length) return false;
+
+  /* prefere o último aparelho usado; na dúvida, o primeiro autorizado */
+  let alvo = null;
+  try{
+    const n = localStorage.getItem('stonni_ar_nome');
+    if(n) alvo = lista.find(d => d.name === n);
+  }catch(e){}
+  alvo = alvo || lista[0];
+
+  aparelho = alvo;
+  aparelho.addEventListener('gattserverdisconnected', caiu);
+  estado('ocupado', 'Procurando o ar…');
+  recado('Procurando o seu ar…', ' Um instante.');
+  log('reconexão silenciosa com "' + (alvo.name || 'sem nome') + '"');
+
+  const estouro = new Promise((_, rej) =>
+    setTimeout(() => rej(new Error('tempo esgotado')), ABERTURA_MS));
+  try{
+    await Promise.race([abrirSessao(), estouro]);
+    return true;
+  }catch(e){
+    log('reconexão ao abrir falhou: ' + e.message, 'err');
+    const ap = aparelho;
+    aparelho = null;                    // corta caiu() e a cadeia de tentativas
+    try{ ap.gatt.disconnect(); }catch(_){}
+    limpaSessao();
+    estado('', 'Desconectado');
+    recado('Não achei o seu ar.',
+           ' Confira se ele está ligado na chave e toque em <b style="font-weight:600">Procurar aparelho</b>.');
+    mostraTela(false);
+    return false;
+  }
 }
 
 async function conectar(){

@@ -127,6 +127,40 @@ Duas telas: conectar → controle. No desktop vira duas colunas a partir de 960 
 - Poll pausa com a tela em segundo plano e dispara na volta.
 - Guarda o último nome de aparelho usado.
 
+## O site só instala; o controle só roda instalado (10/09/2026)
+
+Decisão do produto: quem abre `controle.stonni.com.br` pelo navegador **não usa o controle** —
+vê só a tela de instalação. São três estados agora, não dois:
+
+| Estado | O que aparece |
+|---|---|
+| Navegador (`display-mode: browser`) | só `#telaInstalar` — hero, botão de instalar, passo a passo |
+| Instalado, sem conexão | `#telaConectar` |
+| Instalado, conectado | `#telaControle` |
+
+`instalado()` casa contra `standalone`, `fullscreen`, `minimal-ui` e
+`window-controls-overlay`, mais `navigator.standalone` do iOS. `roteia()` decide uma vez, na
+carga.
+
+O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 s — sem isso a
+pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
+Bluetooth migrou para essa tela: não adianta instalar num iPhone.
+
+### Reconexão silenciosa ao abrir
+
+`reconectaSozinho()` usa `navigator.bluetooth.getDevices()` — que devolve os aparelhos já
+autorizados e permite `gatt.connect()` **sem gesto do usuário**. É o que faz o app abrir já no
+controle em vez de parar em "Procurar aparelho" toda vez. Prefere o último nome usado
+(`localStorage`), senão o primeiro autorizado.
+
+⚠️ **`gatt.connect()` num aparelho fora de alcance fica pendurado — sem erro e sem sucesso.**
+Por isso existe o `ABERTURA_MS` (8 s): estourando o prazo, o app zera `aparelho` (o que corta
+`caiu()` e a cadeia de retentativas), chama `disconnect()` para cancelar a conexão pendente e
+mostra a tela de procurar com um recado. Sem esse limite o app abriria e ficaria travado em
+"Procurando o ar…" para sempre.
+
+Se o Chrome não expuser `getDevices`, a função devolve `false` de cara e tudo segue como antes.
+
 ## Feito para virar app de cliente final (10/09/2026)
 
 O app nasceu como ferramenta interna. Ao decidir que vai no site e no celular do cliente,
