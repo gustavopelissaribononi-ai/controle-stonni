@@ -335,10 +335,17 @@ input{font-family:inherit;font-size:16px}
     </button>
   </header>
 
-  <!-- recado ao cliente — serve às duas telas, por isso fica fora delas -->
+  <!-- recado ao cliente — serve a todas as telas, por isso fica fora delas -->
   <div class="recado" id="recado" hidden>
     <svg class="ic"><use href="#i-aviso"/></svg>
     <div id="recadoTxt"></div>
+  </div>
+
+  <!-- limitação do aparelho: vale tanto na tela de instalar quanto na de conectar,
+       por isso também vive aqui fora -->
+  <div class="aviso" id="avisoSuporte" hidden style="margin:0 0 18px">
+    <svg class="ic"><use href="#i-aviso"/></svg>
+    <div id="avisoTxt"></div>
   </div>
 
   <!-- ================= TELA: INSTALAR =================
@@ -376,11 +383,6 @@ input{font-family:inherit;font-size:16px}
       </ol>
 
       <p class="dica">Já instalou? É só abrir pelo ícone.</p>
-    </div>
-
-    <div class="aviso" id="avisoSuporte" hidden>
-      <svg class="ic"><use href="#i-aviso"/></svg>
-      <div id="avisoTxt"></div>
     </div>
   </section>
 
@@ -891,17 +893,11 @@ function mostraTela(conectado){
 
 /* Decide o que mostrar ao abrir. Só é chamada uma vez, na carga. */
 function roteia(){
-  /* Sem Bluetooth o app não tem o que fazer — fica na tela explicativa, mesmo
-     instalado. O iPhone cai aqui: o Safari deixa "Adicionar à tela inicial",
-     então instalado() diz sim, mas Bluetooth não existe. Sem esta guarda o
-     cliente veria a tela de conexão com um botão morto e nenhuma explicação. */
-  if(!navigator.bluetooth){
-    $('chip').hidden = true;
-    $('telaInstalar').hidden = false;
-    $('telaConectar').hidden = true;
-    $('telaControle').hidden = true;
-    return;
-  }
+  /* Instalado entra no app, mesmo sem Bluetooth. Uma versão anterior barrava
+     aqui quando não havia Bluetooth, achando que protegia o cliente — mas o
+     que fazia era prender o iPhone na tela de instalação depois de ele já ter
+     instalado, sem saída nenhuma. Quem explica a limitação é o aviso, que fica
+     visível nas duas telas. */
   if(instalado()){
     $('chip').hidden = false;
     mostraTela(false);
@@ -1091,6 +1087,8 @@ async function conectar(){
   if(!navigator.bluetooth){
     estado('', 'Sem Bluetooth');
     log('este navegador não expõe Web Bluetooth', 'err');
+    recado(ehIOS ? 'O iPhone não conecta no ar.' : 'Este aparelho não faz Bluetooth.',
+           ' Para controlar o equipamento é preciso um celular <b>Android</b> com Chrome.');
     return;
   }
   try{
@@ -1305,15 +1303,17 @@ const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     $('comoInstalar').hidden = true;
     $('btnInstalar').hidden = true;
     $('avisoTxt').innerHTML = ehIOS
-      ? '<b>O app está instalado, mas o iPhone não faz Bluetooth por app web.</b> É limitação da Apple, não do equipamento — nem pelo Chrome do iPhone, que por dentro é o mesmo Safari. Para controlar o ar, use um celular <b>Android</b>.'
-      : '<b>O app está instalado, mas este aparelho não expõe Bluetooth.</b> Para controlar o ar, use um celular <b>Android</b> com Chrome.';
+      ? '<b>Este iPhone não faz Bluetooth por app web.</b> É limitação da Apple, não do equipamento — nem pelo Chrome do iPhone, que por dentro é o mesmo Safari. Para controlar o ar de verdade, use um celular <b>Android</b>.'
+      : '<b>Este aparelho não expõe Bluetooth.</b> Para controlar o ar, use um celular <b>Android</b> com Chrome.';
   }else{
     $('avisoTxt').innerHTML = ehIOS
       ? '<b>Dá para instalar, mas o controle não vai conectar no iPhone.</b> O iOS não libera Bluetooth para app web — nem pelo Chrome, que por dentro é o mesmo Safari. Para usar o ar, precisa de um <b>Android</b>.'
       : '<b>Este navegador não expõe Bluetooth.</b> Abra no <b>Chrome do Android</b> — é onde o controle funciona.';
   }
   $('avisoSuporte').hidden = false;
-  $('btnConectar').disabled = true;
+  /* O botão continua ativo de propósito: é por ele que se entra no modo teste,
+     que não depende de Bluetooth. Com um código de verdade, conectar() explica
+     por que não vai. */
 })();
 
 /* último nome usado */
@@ -1365,10 +1365,24 @@ window.addEventListener('appinstalled', () => {
   recado('Pronto, está instalado.', ' Feche esta página e abra pelo ícone da Stonni.', 'ok');
 });
 
-/* PWA */
+/* ==========================================================================
+   PWA
+   O service worker novo assume na hora (skipWaiting + clients.claim), e
+   quando ele assume o controle a página se recarrega uma vez. Sem isso o app
+   instalado continua mostrando a versão antiga até alguém desinstalar — foi
+   o que aconteceu no iPhone com o v7.
+   ========================================================================== */
 if('serviceWorker' in navigator && location.protocol === 'https:'){
+  let jaRecarregou = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(jaRecarregou) return;            // guarda contra laço de recarga
+    jaRecarregou = true;
+    location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => reg.update().catch(() => {}))   // procura versão nova toda abertura
+      .catch(() => {});
   });
 }
 

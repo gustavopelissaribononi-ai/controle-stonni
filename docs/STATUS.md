@@ -157,9 +157,16 @@ e abre; simplesmente não acha o ar. Por isso a tela diz isso antes de a pessoa 
 
 | Situação | O que aparece |
 |---|---|
-| iPhone, no navegador | passos de instalação + *"Dá para instalar, mas o controle não vai conectar no iPhone"* |
-| iPhone, já instalado | sem passos + *"O app está instalado, mas o iPhone não faz Bluetooth por app web"* |
+| iPhone, no navegador | tela de instalação com os passos + *"Dá para instalar, mas o controle não vai conectar"* |
+| iPhone, já instalado | **entra no app** (tela de conectar) com o aviso do aparelho fixo |
 | Android | passos do Chrome, sem aviso |
+
+⚠️ **Não barrar o app quando falta Bluetooth.** Uma versão do `roteia()` fazia isso, achando
+que protegia o cliente. O efeito real foi prender o iPhone na tela de instalação *depois* de
+ele já ter instalado — sem saída, e sem nem conseguir chegar ao modo teste. Quem explica a
+limitação é o `#avisoSuporte`, que por isso vive **fora** das telas, ao lado do `#recado`, e
+aparece nas duas. O botão "Procurar aparelho" também continua ativo: é por ele que se entra
+no modo teste, e com um código de verdade o `conectar()` explica por que não vai.
 
 Resolver de verdade exige app nativo — é a pendência de iPhone lá embaixo.
 
