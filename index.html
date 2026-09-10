@@ -290,6 +290,7 @@ input{font-family:inherit;font-size:16px}
   <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 3.4 22.2 20.6H1.8L12 3.4z"/><path d="M12 10v4.6M12 17.5v.1"/></symbol>
   <symbol id="i-pulso" viewBox="0 0 24 24"><path d="M2.5 12h4l2.5-6 4 12 2.5-6h6"/></symbol>
   <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3.2v11"/><path d="M7.8 10.2 12 14.4l4.2-4.2"/><path d="M4.6 17.4v1.4a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2v-1.4"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M8.2 12.3 11 15.1l4.8-5.6"/></symbol>
 </svg>
 
 <div class="app">
@@ -511,6 +512,7 @@ function recado(titulo, texto, tipo){
   if(!titulo){ cx.hidden = true; return; }
   $('recadoTxt').innerHTML = '<b>' + titulo + '</b>' + (texto || '');
   cx.className = 'recado' + (tipo === 'ok' ? ' ok' : '');
+  cx.querySelector('use').setAttribute('href', tipo === 'ok' ? '#i-ok' : '#i-aviso');
   cx.hidden = false;
 }
 
