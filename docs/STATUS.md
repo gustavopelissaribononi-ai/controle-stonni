@@ -17,10 +17,16 @@ instalável na tela inicial do Android. O testador de bancada
 | Coisa | Caminho |
 |---|---|
 | Código | `C:\Aplicações da bononi\controle-stonni\` |
+| Repositório | `github.com/gustavopelissaribononi-ai/controle-stonni` (branch `main`) |
 | Servidor local | `preview_start` → `app-stonni-ar` (porta **5286**) |
 | Script do servidor | `.claude\run-app-stonni.cmd` na pasta de docs |
 | Endereço planejado | `https://controle.stonni.com.br` |
 | Deploy | ainda **não publicado** — ver Publicação |
+
+⚠️ **Este é o único app do grupo fora da conta `leobononi2906`.** Os outros 16 repositórios
+ficam lá. Consequências práticas: a Vercel precisa ter esta conta conectada para importar, e
+quem procurar o app junto com os outros não vai achar. Se incomodar, o GitHub transfere o
+repositório em Settings → Transfer ownership, e aqui basta um `git remote set-url origin`.
 
 Arquivo único `index.html` (~43 KB) + `manifest.json` + `sw.js` + `vercel.json` + `icons/`.
 Sem build, sem dependência de pacote. Segue o padrão dos outros apps do grupo.
@@ -30,8 +36,11 @@ Sem build, sem dependência de pacote. Segue o padrão dos outros apps do grupo.
 Subdomínio próprio na Vercel — seria o **primeiro domínio próprio do grupo**; os outros 16
 apps rodam em `*.vercel.app`. Passos que dependem de acesso a conta:
 
-1. Criar `github.com/leobononi2906/controle-stonni` e dar push da `main`
-2. Vercel → importar o repo, framework "Other", sem build
+1. ~~Criar o repositório e dar push da `main`~~ ✅ **feito em 10/09/2026** —
+   `github.com/gustavopelissaribononi-ai/controle-stonni`
+2. Vercel → importar o repo, framework "Other", sem build. **Já dá um endereço
+   `*.vercel.app` funcional** — use ele para instalar num Android e testar o Bluetooth com o
+   equipamento antes de mexer em DNS.
 3. Cloudflare → `CNAME controle → cname.vercel-dns.com`, **proxy desligado (nuvem cinza)**,
    senão a Vercel não emite o certificado
 4. Vercel → Domains → adicionar `controle.stonni.com.br`
