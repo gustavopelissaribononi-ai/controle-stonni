@@ -112,7 +112,34 @@ Tema **escuro** (o site é claro): é um controle usado dentro da cabine, muitas
 à noite. Texto sobre o ciano é quase-preto `#04222D` — branco sobre ciano, como o site
 faz, dá 2,5:1 e reprova AA; num controle isso atrapalha de verdade.
 
-Duas telas: conectar → controle. No desktop vira duas colunas a partir de 960 px.
+### Responsividade
+
+Medido, não estimado — em 320, 390, 700, 768, 844×390, 1024 e 1440. Em todos: **nenhum
+vazamento horizontal e nenhum alvo de toque abaixo de 40 px**.
+
+| Tela | Antes | Agora |
+|---|---|---|
+| 768×1024 (tablet em pé) | 68% de uso, 1 coluna | **98%**, 2 colunas, 1,8 telas de rolagem |
+| 844×390 (celular deitado) | 1 coluna, 6,2 telas de rolagem | **2 colunas, 4,3 telas**, número 116→58 px |
+| 320 e 390 (celular em pé) | ok | mantido, 100% de uso |
+
+O que estava errado: o corte de duas colunas ficava em **960 px**, e deixava de fora
+justamente os dois casos comuns — tablet em pé e celular deitado. Agora são **700 px** para
+as duas colunas e **1100 px** para a largura máxima.
+
+Deitado, o recurso escasso é a **altura**, não a largura: existe um bloco
+`@media(orientation:landscape) and (max-height:520px)` que aperta o vertical (número, paddings
+dos cartões, botões redondos) sem mexer no resto.
+
+⚠️ **Instalar e conectar não esticam** (`max-width:560px` a partir de 700 px). São formulários
+curtos; a 1000 px o título fica ilegível e o botão principal vira faixa. Quem ganha com tela
+larga é o controle, que vira duas colunas.
+
+⚠️ Cuidado com `ch` para limitar largura de título: tentei `.hero{max-width:19ch}` e deu
+174 px, porque `ch` usa a fonte do **contêiner** (15 px), não a do `h1` (54 px). O título
+quebrou em três linhas.
+
+Duas telas: conectar → controle.
 
 ## O que o app faz além do testador
 

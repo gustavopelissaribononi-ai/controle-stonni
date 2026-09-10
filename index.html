@@ -356,11 +356,48 @@ input{font-family:inherit;font-size:16px}
   text-underline-offset:3px;font-size:12px}
 
 /* ---------- desktop: duas colunas ---------- */
-@media(min-width:960px){
+/* ==========================================================================
+   RESPONSIVIDADE
+   O corte de duas colunas estava em 960 px, o que deixava de fora justamente
+   os dois casos comuns: tablet em pé (768) e celular deitado (812x375). Nos
+   dois o app ficava travado em 520 px — 68% de aproveitamento no tablet, e
+   6,2 telas de rolagem no celular deitado.
+   ========================================================================== */
+
+/* daqui para cima já cabem duas colunas: tablet em pé e celular deitado */
+@media(min-width:700px){
+  .app{max-width:940px}
+  .grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:16px;align-items:start}
+  /* Instalar e conectar são formulários curtos: esticar por 1000 px deixa o
+     título ilegível e o botão principal com largura de banner. Quem ganha
+     com a tela larga é o controle, que vira duas colunas. */
+  #telaInstalar,#telaConectar{max-width:560px}
+}
+@media(min-width:1100px){
   .app{max-width:1060px}
-  .grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
   .leitura .num{font-size:104px}
 }
+
+/* Deitado, o recurso escasso é a ALTURA, não a largura: o número de 116 px
+   comia um terço da tela. Aperta o vertical sem mexer no resto. */
+@media(orientation:landscape) and (max-height:520px){
+  .app{padding-top:calc(env(safe-area-inset-top) + 10px)}
+  .topo{margin-bottom:14px}
+  .hero{padding:14px 0 20px}
+  .leitura .num{font-size:clamp(58px,13vh,74px)}
+  .leitura .un{font-size:20px;margin-top:6px}
+  .ambiente{margin-bottom:14px}
+  .card{padding:14px;margin-bottom:11px}
+  .card > h2{margin-bottom:11px}
+  .clima-topo{gap:10px}
+  .liga{width:46px;height:46px}
+  .liga .ic{width:21px;height:21px}
+  .passo button{width:48px;height:48px}
+  .op{min-height:64px;padding:10px 6px}
+  .tec-console{height:150px}
+}
+
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
