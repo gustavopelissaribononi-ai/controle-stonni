@@ -952,7 +952,131 @@ async function reconectaSozinho(){
   }
 }
 
+/* ==========================================================================
+   MODO TESTE — digite TESTE no campo de código
+   Simula um ar-condicionado para conferir a interface sem equipamento na
+   frente. Não é atalho: monta quadros de status de verdade e responde aos
+   comandos, então o app percorre o caminho real inteiro (escreve → recebe →
+   leStatus → pinta). O que ele NÃO prova é o protocolo — o simulador obedece
+   à mesma convenção que o app assume, inclusive no ponto ainda não
+   confirmado (desligar com valor 2). Só o equipamento decide isso.
+   ========================================================================== */
+const CODIGO_TESTE = ['TESTE', 'DEMO'];
+let modoTeste = false;
+
+function montaStatusSim(s){
+  const f = new Uint8Array(21);
+  f[0] = f[1] = 0x5A;
+  f[2] = (s.power << 7) | ((s.mode & 7) << 4) | ((s.fan & 7) << 1) | s.display;
+  f[3] = (s.turbo << 7) | (s.auto << 6) | (s.eco << 5) | (s.sleep << 4)
+       | (s.swing << 3) | (s.ion << 2) | (s.light << 1) | s.windSide;
+  f[4] = s.inlet;  f[5] = s.core;   f[6] = s.comp;  f[7] = s.fanA;
+  f[8] = s.volt;   f[9] = s.underV; f[10] = s.fault; f[11] = s.timerOn;
+  f[12] = s.tOpen >> 8;  f[13] = s.tOpen & 255;
+  f[14] = s.tClose >> 8; f[15] = s.tClose & 255;
+  f[16] = s.unit;  f[17] = s.target;
+  let soma = 0; for(let i = 0; i < 18; i++) soma += f[i];
+  f[18] = soma & 0xFF; f[19] = 0x0D; f[20] = 0x0A;
+  return f;
+}
+
+function aplicaComandoSim(s, q){
+  if(q.length < 6) return;
+  const cmd = q[4], val = q[5];
+  const chave = v => (v === 1 ? 1 : 0);   // 1 liga, 2 desliga
+  switch(cmd){
+    case 1:  s.power = val === 1 ? 1 : 0; break;
+    case 2:
+      if(val === 1)      s.mode = 1;      // refrigerar
+      else if(val === 7) s.mode = 2;      // desumidificar
+      else if(val === 2) s.mode = 3;      // ventilar
+      else if(val === 8) s.mode = 4;      // aquecer
+      else if(val === 9) s.auto  = s.auto  ? 0 : 1;
+      else if(val === 6) s.turbo = s.turbo ? 0 : 1;
+      else if(val === 4) s.eco   = s.eco   ? 0 : 1;
+      else if(val === 5) s.sleep = s.sleep ? 0 : 1;
+      break;
+    case 3:  s.target = val; break;
+    case 4:  s.fan = val; break;
+    case 10: s.display  = chave(val); break;
+    case 28: s.light    = chave(val); break;
+    case 68: s.windSide = val ? 1 : 0; break;
+    case 69: s.swing    = chave(val); break;
+  }
+}
+
+/* Faz o ambiente caminhar na direção do alvo, senão a tela fica estática e
+   não dá para ver se ela reage. */
+function evoluiSim(s){
+  if(!s.power){ s.comp = 0; s.fanA = 0; return; }
+  s.comp = s.mode === 3 ? 1 : (s.turbo ? 12 : 8 + (s.fan > 3 ? 1 : 0));
+  s.fanA = Math.max(1, Math.round(s.fan / 2));
+  if(s.mode === 1 && s.inlet > s.target && Math.random() < .4) s.inlet--;
+  if(s.mode === 4 && s.inlet < s.target && Math.random() < .4) s.inlet++;
+  s.core = s.mode === 4 ? Math.min(70, s.inlet + 12) : Math.max(2, s.inlet - 14);
+}
+
+/* Aparelho falso com a mesma cara de um BluetoothDevice, para poder passar
+   pelo abrirSessao() de verdade em vez de desviar dele. */
+function aparelhoDeTeste(){
+  const s = {
+    power:1, mode:1, fan:3, display:1,
+    turbo:0, auto:0, eco:0, sleep:0, swing:1, ion:0, light:1, windSide:0,
+    inlet:29, core:15, comp:9, fanA:2, volt:24, underV:0, fault:0,
+    timerOn:0, tOpen:0, tClose:0, unit:0, target:22
+  };
+  let ouvinte = null;
+
+  const carRx = {
+    startNotifications: () => Promise.resolve(),
+    addEventListener(ev, cb){ if(ev === 'characteristicvaluechanged') ouvinte = cb; }
+  };
+  const carTxFalsa = {
+    properties: { write: true },
+    writeValueWithResponse(buf){
+      aplicaComandoSim(s, new Uint8Array(buf));
+      setTimeout(() => {
+        if(!ouvinte) return;
+        evoluiSim(s);
+        ouvinte({ target: { value: { buffer: montaStatusSim(s).buffer } } });
+      }, 90);                              // a placa leva um instante para responder
+      return Promise.resolve();
+    }
+  };
+  const servico = { getCharacteristic: u => Promise.resolve(u === CAR_TX ? carTxFalsa : carRx) };
+
+  return {
+    name: 'Modo teste',
+    addEventListener(){},
+    gatt: {
+      connected: false,
+      connect(){ this.connected = true;
+        return Promise.resolve({ getPrimaryService: () => Promise.resolve(servico) }); },
+      disconnect(){ this.connected = false; }
+    }
+  };
+}
+
 async function conectar(){
+  const digitado = $('nomeAp').value.trim();
+
+  /* Antes da checagem de Bluetooth: o modo teste tem que abrir mesmo em
+     aparelho que não faz Bluetooth nenhum. */
+  if(CODIGO_TESTE.indexOf(digitado.toUpperCase()) >= 0){
+    modoTeste = true;
+    aparelho = aparelhoDeTeste();
+    log('modo teste: simulando um ar-condicionado');
+    try{
+      await abrirSessao();
+      recado('Modo teste.', ' Nenhum ar de verdade está conectado — os controles respondem a um simulador.');
+    }catch(e){
+      modoTeste = false;
+      log('modo teste falhou: ' + e.message, 'err');
+      recado('Não consegui abrir o modo teste.', ' ' + e.message);
+    }
+    return;
+  }
+
   if(!navigator.bluetooth){
     estado('', 'Sem Bluetooth');
     log('este navegador não expõe Web Bluetooth', 'err');
@@ -961,7 +1085,7 @@ async function conectar(){
   try{
     estado('ocupado', 'Procurando…');
     recado();
-    const nome = $('nomeAp').value.trim();
+    const nome = digitado;
     const opc = { optionalServices:[SERVICO] };
     if(nome){
       opc.filters = [{ name: nome }];
@@ -1010,8 +1134,11 @@ async function abrirSessao(){
 
   /* Conectou uma vez, fica salvo: é o nome que reconectaSozinho() procura na
      próxima abertura, e o que volta preenchido no campo. Guarda aqui, e não
-     no que a pessoa digitou, porque aqui é o nome que o aparelho respondeu. */
-  try{ if(aparelho.name) localStorage.setItem('stonni_ar_nome', aparelho.name); }catch(e){}
+     no que a pessoa digitou, porque aqui é o nome que o aparelho respondeu.
+     O simulador fica de fora — não faz sentido reconectar nele sozinho. */
+  try{
+    if(aparelho.name && !modoTeste) localStorage.setItem('stonni_ar_nome', aparelho.name);
+  }catch(e){}
   mostraTela(true);
   pinta();
 
@@ -1062,6 +1189,7 @@ function desconectar(){
   const ap = aparelho;
   aparelho = null;                    // corta a reconexão automática
   tentandoVoltar = 0;
+  modoTeste = false;
   limpaSessao();
   if(ap && ap.gatt.connected) ap.gatt.disconnect();
   log('desconectado pelo usuário');

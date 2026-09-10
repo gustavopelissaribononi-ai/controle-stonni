@@ -146,6 +146,24 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### Modo teste — digite `TESTE` (ou `DEMO`) no campo de código
+
+Abre o controle com um ar-condicionado **simulado**, para conferir a interface sem
+equipamento na frente. Não é um atalho: `aparelhoDeTeste()` devolve um objeto com a mesma
+cara de um `BluetoothDevice` e passa pelo `abrirSessao()` de verdade, então o app percorre o
+caminho inteiro — monta quadro, escreve, recebe notificação, `leStatus()`, `pinta()`. O
+simulador monta quadros de 21 bytes com checksum válido e faz o ambiente caminhar na direção
+do alvo, senão a tela ficaria estática.
+
+⚠️ **O modo teste valida a interface, não o protocolo.** O simulador obedece exatamente à
+convenção que o app assume — inclusive no ponto ainda não confirmado (desligar com valor 2).
+Ele nunca vai discordar do app, porque foi escrito a partir dele. Só o equipamento decide.
+
+Funciona antes da checagem de Bluetooth, então abre até em aparelho que não tem Bluetooth
+nenhum. Não fica salvo no `localStorage` — não faria sentido reconectar sozinho num
+simulador. O código **não aparece na tela** de propósito: é ferramenta, não recurso do
+cliente.
+
 ### Leitor de QR Code
 
 `BarcodeDetector` — nativo no Chrome do Android, **sem biblioteca e sem rede**, então o leitor
