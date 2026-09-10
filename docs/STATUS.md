@@ -146,6 +146,27 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### Leitor de QR Code
+
+`BarcodeDetector` — nativo no Chrome do Android, **sem biblioteca e sem rede**, então o leitor
+funciona com o app offline. Botão ao lado do campo de código abre a câmera em tela cheia
+(`facingMode: environment`); ao ler, preenche o campo e **já chama `conectar()`** — ler o
+código e ainda pedir mais um toque seria bobagem.
+
+`extraiCodigo()` tem uma regra que não é óbvia: **conteúdo curto e sem espaço vai verbatim**.
+O filtro do Bluetooth casa o nome exato, então normalizar maiúscula ou separador quebraria a
+conexão — `kt-a1b2c3` precisa continuar `kt-a1b2c3`. Só quando o QR vem embrulhado (uma URL,
+ou texto em volta) é que se extrai o `KT-…` de dentro.
+
+Onde não houver `BarcodeDetector` ou a câmera for negada, o campo manual continua valendo e o
+app diz isso — por isso o campo **não sai da tela**.
+
+### O aparelho fica salvo depois da primeira conexão
+
+`abrirSessao()` grava `aparelho.name` no `localStorage` **depois** de conectar — o nome que o
+aparelho respondeu, não o que a pessoa digitou. É o que `reconectaSozinho()` procura na
+abertura seguinte.
+
 ### Reconexão silenciosa ao abrir
 
 `reconectaSozinho()` usa `navigator.bluetooth.getDevices()` — que devolve os aparelhos já
