@@ -27,8 +27,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+
+      # Publica SO o app. Antes subia a pasta inteira, e com ela o
+      # docs/STATUS.md (que descreve o protocolo comando a comando), o
+      # testador de bancada e o README -- tudo aberto na internet.
+      # O .vercelignore nao vale aqui; no Pages a barreira e esta.
+      - name: Monta o site com o que o cliente precisa
+        run: |
+          mkdir -p _site/icons
+          cp index.html manifest.json sw.js _site/
+          cp icons/*.png _site/icons/
+          echo "Publicado:" && find _site -type f | sort
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
       - id: deployment
         uses: actions/deploy-pages@v4
