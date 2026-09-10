@@ -168,9 +168,8 @@ não foi resolvida, o controle está aguardando — daí o helper `aguardando()`
 chamado **depois** de `valor()`, que é quem resolve a marca. O prazo da marca subiu de 4,5 s
 para 9 s, senão um comando lento expira antes de confirmar.
 
-**Painel de requisições.** `#painelTec`, escondido do cliente, ligado com **5 toques no logo**
-do cabeçalho (gesto em vez de botão porque o app é público). Mostra TX/RX e, o que interessa
-para este problema, **quanto tempo cada comando levou até o equipamento confirmar**:
+**Painel de requisições.** `#painelTec` mostra TX/RX e, o que interessa para este problema,
+**quanto tempo cada comando levou até o equipamento confirmar**:
 
 ```
 TX  5A 5A 06 01 0A 02 C7 0D 0A   Display off
@@ -178,8 +177,17 @@ RX  5A 5A 96 0A 1B 0D 08 02 19 15 ...
 confirmado chv:display em 1.0 s
 ```
 
+🚧 **Enquanto durar a validação, o painel nasce VISÍVEL** — em qualquer aparelho e em qualquer
+conexão, não só no modo teste. Começou escondido atrás de 5 toques no logo, mas na bancada
+isso atrapalha: quem está com o equipamento na mão precisa ver o log sem lembrar de gesto. Os
+5 toques continuam escondendo e mostrando, e a escolha fica no `localStorage`.
+
+⚠️ **Antes de publicar para o cliente, devolver o `hidden` ao `<section id="painelTec">` e
+inverter a leitura do `localStorage`** (voltar a mostrar só quando valer `'1'`). Está na lista
+de pendências. Cliente final não pode ver envio bruto de comando.
+
 O `log()` escreve no painel mesmo com ele escondido, então dá para ligar no meio de um teste e
-o histórico já está lá. A preferência fica no `localStorage`.
+o histórico já está lá.
 
 ### Bateria do caminhão (proteção de subtensão)
 
@@ -318,6 +326,10 @@ mudou:
 
 ## Pendências
 
+- [ ] 🚧 **Esconder o painel de requisições antes de publicar para o cliente.** Hoje ele nasce
+      visível de propósito, para a validação de bancada. Devolver `hidden` ao
+      `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
+      valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
 - [ ] **Validar na bancada o desligar de oscilação / luz / display.** É o único ponto
       do protocolo não confirmado: o testador só tinha o valor de *ligar*. Adotei
       `des: 2`, seguindo a convenção do liga/desliga (1 liga, 2 desliga). Se não

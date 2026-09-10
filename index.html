@@ -592,9 +592,11 @@ input{font-family:inherit;font-size:16px}
           </div>
         </section>
 
-        <!-- Painel de requisições. Escondido do cliente; liga com 5 toques no
-             logo do cabeçalho. Serve para achar por que um comando demora. -->
-        <section class="card" id="painelTec" hidden>
+        <!-- Painel de requisições. FASE DE TESTE: fica visível sempre, em
+             qualquer aparelho e em qualquer conexão. Antes de publicar para o
+             cliente, voltar a nascer com `hidden` — ver docs/STATUS.md.
+             Os 5 toques no logo escondem e mostram. -->
+        <section class="card" id="painelTec">
           <h2><svg class="ic"><use href="#i-pulso"/></svg> Requisições</h2>
           <div class="tec-console" id="log"></div>
           <div class="tec-bruto">
@@ -608,7 +610,8 @@ input{font-family:inherit;font-size:16px}
           </div>
           <p class="tec-nota">Âmbar no botão = enviado, aguardando o aparelho. As linhas
              <b style="color:var(--alerta)">confirmado…</b> mostram quanto tempo cada comando
-             levou para o equipamento responder. 5 toques no logo escondem este painel.</p>
+             levou para o equipamento responder. Painel de teste — 5 toques no logo escondem
+             ou mostram.</p>
         </section>
 
       </div>
@@ -1483,8 +1486,9 @@ document.querySelector('.marca').addEventListener('click', () => {
   vibra(25);
   mostraPainel($('painelTec').hidden);
 });
+/* Nasce visível; só fica escondido se alguém pediu pelo gesto. */
 try{
-  if(localStorage.getItem('stonni_ar_painel') === '1') $('painelTec').hidden = false;
+  if(localStorage.getItem('stonni_ar_painel') === '0') $('painelTec').hidden = true;
 }catch(e){}
 
 $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
