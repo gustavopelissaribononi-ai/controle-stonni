@@ -1,0 +1,193 @@
+# STATUS — controle-stonni (ar-condicionado por Bluetooth)
+
+> Índice vivo do projeto. Atualizar sempre que mexer.
+> Última atualização: **10/09/2026**
+
+## O que é
+
+Controle remoto do ar-condicionado Stonni, rodando no navegador do celular e falando
+direto com a placa do equipamento por **Bluetooth LE** — sem servidor, sem login,
+sem internet. **É o app do cliente final**, publicado a partir do site da Stonni e
+instalável na tela inicial do Android. O testador de bancada
+(`bancada/testador-ble.html`) continua existindo só como ferramenta de protocolo, e
+**não vai para o ar**.
+
+## Onde está
+
+| Coisa | Caminho |
+|---|---|
+| Código | `C:\Aplicações da bononi\controle-stonni\` |
+| Servidor local | `preview_start` → `app-stonni-ar` (porta **5286**) |
+| Script do servidor | `.claude\run-app-stonni.cmd` na pasta de docs |
+| Endereço planejado | `https://controle.stonni.com.br` |
+| Deploy | ainda **não publicado** — ver Publicação |
+
+Arquivo único `index.html` (~43 KB) + `manifest.json` + `sw.js` + `vercel.json` + `icons/`.
+Sem build, sem dependência de pacote. Segue o padrão dos outros apps do grupo.
+
+## Publicação (decidido em 10/09/2026)
+
+Subdomínio próprio na Vercel — seria o **primeiro domínio próprio do grupo**; os outros 16
+apps rodam em `*.vercel.app`. Passos que dependem de acesso a conta:
+
+1. Criar `github.com/leobononi2906/controle-stonni` e dar push da `main`
+2. Vercel → importar o repo, framework "Other", sem build
+3. Cloudflare → `CNAME controle → cname.vercel-dns.com`, **proxy desligado (nuvem cinza)**,
+   senão a Vercel não emite o certificado
+4. Vercel → Domains → adicionar `controle.stonni.com.br`
+5. WordPress → botão e QR Code apontando para o endereço, avisando que é **Android**
+
+⚠️ **Ninguém documentou quem tem acesso ao Cloudflare / WordPress da Stonni.** A relação do
+grupo com o site sempre foi só hotlink de imagem. Esse é o passo que pode segurar a
+publicação — não o código.
+
+O site em si: WordPress 6.9.7 + Elementor, na Hostinger, atrás de Cloudflare (DNS nos
+nameservers `saanvi`/`renan.ns.cloudflare.com`), LiteSpeed com cache de 7 dias.
+
+## Protocolo (copiado do testador, sem alteração)
+
+| Item | Valor |
+|---|---|
+| Serviço | `0000ffe0-0000-1000-8000-00805f9b34fb` |
+| Notificações (RX) | `…ffe1…` |
+| Escrita (TX) | `…ffe2…` |
+| Quadro | 9 bytes · `5A 5A len tipo cmd val chk 0D 0A` · chk = soma & 0xFF |
+| Ativação | `cmd 0x42` logo após conectar, antes das notificações |
+| Status | consulta `cmd 255 val 0` a cada 3 s; resposta com ≥21 bytes |
+| Busca | filtro por nome exato (QR Code) ou `namePrefix: 'KT'` |
+
+`montaQuadro`, `montaAtivacao`, `leStatus` e a remontagem do buffer são **idênticos**
+ao testador validado na bancada. Não mexer sem o equipamento na mão.
+
+Comandos: `1`=liga(1)/desliga(2) · `2`=modo e funções · `3`=temperatura alvo ·
+`4`=ventilador 1–5 · `10`=display · `28`=luz · `68`=ar externo(1)/interno(0) ·
+`69`=oscilação · `255`=status.
+
+⚠️ Atenção ao mapa duplo do **modo**: o valor que se envia não é o código que volta
+no status. Refrigerar envia 1 / volta 1 · Desumidificar envia 7 / volta 2 ·
+Ventilar envia 2 / volta 3 · Aquecer envia 8 / volta 4. No HTML isso está em
+`data-val` (envio) e `data-est` (status).
+
+## Design
+
+Identidade extraída do próprio site (stonni.com.br), não inventada:
+
+- Ciano **#00AEE7** — cor de preenchimento e dos números grandes
+- **Roboto 900** nos títulos e na temperatura · **Manrope** no corpo
+- Botão cheio, raio 12–16 px, `padding 12px 24px`
+
+Tema **escuro** (o site é claro): é um controle usado dentro da cabine, muitas vezes
+à noite. Texto sobre o ciano é quase-preto `#04222D` — branco sobre ciano, como o site
+faz, dá 2,5:1 e reprova AA; num controle isso atrapalha de verdade.
+
+Duas telas: conectar → controle. No desktop vira duas colunas a partir de 960 px.
+
+## O que o app faz além do testador
+
+- **Estado ativo real** — modo, ventilador, funções e chaves acendem conforme o que a
+  placa responde, não conforme o último botão tocado.
+- **Estado otimista** (`marca`/`valor`) — o status chega de 3 em 3 s; sem isso o botão
+  que você acabou de tocar voltaria sozinho. Cada marca cai assim que o aparelho
+  confirma o mesmo valor, ou no prazo (4,5 s; 9 s na temperatura).
+- **Temperatura com envio automático** — 600 ms depois do último toque, sem botão
+  "Enviar". No testador, o poll de 3 s sobrescrevia o valor que você estava ajustando.
+- **Reconexão automática** — 3 tentativas com espera crescente. Bluetooth em caminhão
+  cai; sem isso o motorista precisaria refazer a busca.
+- **Chaves liga/desliga** de oscilação, luz e display, em vez de botão de mão única.
+- **PWA instalável de verdade** — ícones locais 192/512/maskable e botão próprio
+  "Instalar na tela inicial" (`beforeinstallprompt`). Nenhum outro app do grupo tem esse
+  botão; sem ele o motorista teria que achar "Instalar app" no menu do Chrome.
+- **Recado em português** no lugar do log — ver abaixo.
+- Poll pausa com a tela em segundo plano e dispara na volta.
+- Guarda o último nome de aparelho usado.
+
+## Feito para virar app de cliente final (10/09/2026)
+
+O app nasceu como ferramenta interna. Ao decidir que vai no site e no celular do cliente,
+mudou:
+
+- **Ícones locais** em `icons/`, gerados do símbolo oficial 2560×2560 (ver `arte/LEIAME.md`).
+  Antes o manifest tinha um único ícone de 300 px hospedado no WordPress — o Chrome no
+  Android não instala assim.
+- **Zero dependência do site.** Logo do cabeçalho e favicon eram remotos; agora são arquivos
+  locais e o `sw.js` não tem mais regra para `stonni.com.br`. Um app instalado que busca
+  imagem no WordPress não é offline.
+- **Painel técnico removido.** Envio bruto de comando não fica exposto a quem abrir o site.
+  A função `log()` continua existindo e alimenta o `console` — a assistência lê por
+  `chrome://inspect`. Quem mexe em protocolo usa `bancada/testador-ble.html`.
+- **`recado()` no lugar do log.** Sem o painel, o cliente veria o chip voltar para
+  "Desconectado" e nada mais. `recadoDeErro()` traduz a falha do Web Bluetooth para algo
+  acionável ("Confira se o ar está ligado na chave e se você está perto dele"). Cancelar a
+  lista de aparelhos devolve `null` de propósito: é intenção do usuário, não erro.
+- **Headers no `vercel.json`** — `Service-Worker-Allowed`, `no-cache` no `sw.js`/HTML/manifest
+  e `immutable` nos ícones.
+- Pasta renomeada de `Aplicativo Stonni` para `controle-stonni` (kebab-case do grupo, igual
+  ao subdomínio). O `.claude\run-app-stonni.cmd` foi ajustado junto — o nome curto 8.3 mudou
+  de `APLICA~1` para `CONTRO~1`.
+
+## Pendências
+
+- [ ] **Validar na bancada o desligar de oscilação / luz / display.** É o único ponto
+      do protocolo não confirmado: o testador só tinha o valor de *ligar*. Adotei
+      `des: 2`, seguindo a convenção do liga/desliga (1 liga, 2 desliga). Se não
+      responder, muda numa linha só — constante `CHAVES` no topo do script. Como o app
+      não tem mais envio bruto, esse teste é feito pelo `bancada/testador-ble.html`.
+- [ ] Confirmar os offsets de `leStatus` com o equipamento ligado. O parser lê o byte
+      2 como estado (onde o cabeçalho sugeriria comprimento). Veio assim do testador;
+      a função `confere()` avisa no console se tensão/ambiente/modo vierem implausíveis.
+- [ ] **Publicar** — Web Bluetooth exige https. Ver seção Publicação; o gargalo é acesso
+      ao Cloudflare, não código.
+- [ ] Confirmar a instalação num Android real: botão "Instalar" aparecendo, ícone sem
+      círculo branco em volta na tela inicial, e abertura em `standalone` no modo avião.
+- [ ] Decidir sobre iPhone. Safari não expõe Bluetooth para página web e a Apple não
+      sinaliza mudança — o app mostra o aviso, mas metade dos clientes fica de fora.
+      Resolver exige app nativo (ou wrapper tipo Capacitor).
+- [ ] Fora deste app: o ícone PWA do `com_stonni` é um JPEG declarado como PNG quadrado.
+      Provavelmente impede a instalação daquele app.
+
+## Decisões que não são óbvias no código
+
+- **Sem Supabase, sem Hub, sem login.** É um app de cliente final, offline, que só
+  conversa com a placa por Bluetooth. Não há o que autenticar nem o que registrar em
+  `{prefixo}_logs`. Por isso o checklist de app novo do padrão do grupo se aplica só
+  em parte aqui.
+- **Sem aba de Configurações.** Não há regra de negócio: o que existe é protocolo, e
+  protocolo mora em constante nomeada no topo do script (`CHAVES`, `MODOS`, `FALHAS`).
+- **O service worker não registra em localhost**, de propósito (`location.protocol ===
+  'https:'`). Cache de service worker já escondeu semanas de trabalho neste grupo; em
+  desenvolvimento o que se vê é sempre o arquivo, nunca o cache. Testar o offline
+  exige subir num https.
+
+## Dev-log
+
+**10/09/2026** — App criado a partir do `testador-ble.html` validado na bancada.
+Protocolo portado sem alteração; UI refeita com a identidade do site. Três bugs
+encontrados e corrigidos no caminho:
+
+1. Faltava a regra base do `.ic` — todos os ícones saíam preenchidos em vez de
+   traçados (apareciam como bolinhas).
+2. A névoa decorativa do cartão de clima vazava 90 px pela direita e, com
+   `overflow:hidden`, transformava o cartão num container rolável: qualquer controle
+   recebendo foco arrastava o conteúdo para a esquerda e cortava a temperatura.
+   Corrigido com `right:0` + `overflow:clip`.
+3. A reconexão automática não se sustentava: falhando a 1ª tentativa, a cadeia parava
+   e o chip ficava preso em "Reconectando (1/3)…" para sempre. Cada falha agora
+   agenda a próxima (`tentaVoltar`).
+
+Verificado no Chromium em 375×812 e 1100×820, sem erro de console: quadro de status
+sintético renderizando, temperatura com trava otimista, modo/ventilador/chaves
+acendendo, cadeia de reconexão 1→2→3→desconectado, e `desconectar()` limpando estado.
+**O caminho BLE em si ainda não foi testado com o equipamento** — só o protocolo
+portado e a tela.
+
+**10/09/2026 (2ª rodada)** — Definido que o app vai no site da Stonni e no celular do
+cliente. Virou produto público: ícones locais gerados do símbolo oficial 2560×2560,
+dependência do WordPress cortada, painel técnico removido, `recado()` traduzindo falha de
+Bluetooth para português, botão de instalar, headers de cache no `vercel.json`, pasta
+renomeada para `controle-stonni`.
+
+Verificado: manifest servindo os três ícones em `200 image/png` com `purpose` correto e
+assinatura PNG real conferida byte a byte; `recadoDeErro()` cobrindo os cinco casos
+(inclusive cancelamento devolvendo `null`); painel técnico ausente do DOM; tela de controle
+íntegra sem ele. **Instalação real no Android continua por testar** — só é possível depois
+de publicar num https.

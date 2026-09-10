@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bancada BLE — Ar-condicionado Stonne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --dash:#1C222B;
+    --panel:#252D38;
+    --sunk:#161B22;
+    --rule:#39434F;
+    --amber:#FFA92B;
+    --ink:#E9E7E2;
+    --dim:#8B96A3;
+    --fault:#FF5C4D;
+    --ok:#6FD08C;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--dash);
+    color:var(--ink);
+    font-family:'Barlow',system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 64px}
+
+  /* ---- topo ---- */
+  header{
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;
+    padding-bottom:16px;border-bottom:1px solid var(--rule);margin-bottom:24px;
+  }
+  h1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;font-size:30px;letter-spacing:.01em;
+    margin:0;line-height:1.1;
+  }
+  .sub{color:var(--dim);font-size:15px;margin:0}
+
+  /* ---- estado da conexão ---- */
+  .conn{
+    display:flex;flex-wrap:wrap;align-items:center;gap:14px;
+    background:var(--panel);border:1px solid var(--rule);
+    padding:14px 16px;margin-bottom:24px;
+  }
+  .lamp{width:9px;height:9px;border-radius:50%;background:var(--rule);flex:none}
+  .lamp.on{background:var(--ok);box-shadow:0 0 10px rgba(111,208,140,.7)}
+  .lamp.busy{background:var(--amber);box-shadow:0 0 10px rgba(255,169,43,.7)}
+  #connState{flex:1;min-width:180px;color:var(--dim);font-size:15px}
+  #connState b{color:var(--ink);font-weight:500}
+
+  button{
+    font-family:'Barlow',sans-serif;font-size:15px;font-weight:500;
+    color:var(--ink);background:var(--panel);
+    border:1px solid var(--rule);padding:9px 15px;
+    cursor:pointer;
+  }
+  button:hover:not(:disabled){border-color:var(--amber)}
+  button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.key{background:var(--amber);color:#1A1206;border-color:var(--amber);font-weight:600}
+  button.key:hover:not(:disabled){filter:brightness(1.08)}
+  button.act{border-color:var(--amber);color:var(--amber)}
+
+  /* ---- localizador por nome ---- */
+  .finder{
+    background:var(--panel);border:1px solid var(--rule);
+    border-top:none;padding:14px 16px;margin:-24px 0 24px;
+  }
+  .finder > label{display:block;color:var(--dim);font-size:14px;margin-bottom:8px}
+  .finder-row{display:flex;gap:8px}
+  input[type=text]{
+    flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:14px;
+    background:var(--sunk);border:1px solid var(--rule);color:var(--ink);padding:9px 11px;
+  }
+  input[type=text]:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber)}
+
+  /* ---- painel de instrumentos ---- */
+  .cluster{
+    background:var(--sunk);border:1px solid var(--rule);
+    padding:26px 22px;margin-bottom:24px;
+  }
+  .gauge{display:flex;align-items:flex-end;gap:8px;margin-bottom:4px}
+  .big{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;
+    font-size:96px;line-height:.82;color:var(--amber);
+    font-variant-numeric:tabular-nums;
+  }
+  .big.idle{color:var(--rule)}
+  .unit{font-family:'Barlow Condensed',sans-serif;font-size:30px;color:var(--dim);padding-bottom:6px}
+  .gauge-note{color:var(--dim);font-size:15px;margin:0 0 22px}
+  .readouts{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));
+    gap:1px;background:var(--rule);border:1px solid var(--rule);
+  }
+  .cell{background:var(--sunk);padding:11px 13px}
+  .cell span{display:block;color:var(--dim);font-size:13px;line-height:1.3}
+  .cell strong{
+    font-family:'Barlow Condensed',sans-serif;font-weight:500;
+    font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:.01em;
+  }
+  .cell strong.bad{color:var(--fault)}
+  .cell strong.good{color:var(--ok)}
+
+  /* ---- controles ---- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+  h2{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;
+    font-size:21px;margin:0 0 4px;
+  }
+  .hint{color:var(--dim);font-size:14px;margin:0 0 14px}
+  .group{margin-bottom:22px}
+  .row{display:flex;flex-wrap:wrap;gap:8px}
+  .step{display:flex;align-items:center;gap:10px}
+  .step output{
+    font-family:'Barlow Condensed',sans-serif;font-size:26px;
+    min-width:52px;text-align:center;font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- console ---- */
+  .console{
+    background:var(--sunk);border:1px solid var(--rule);
+    height:340px;overflow-y:auto;padding:12px 14px;
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.75;
+  }
+  .console div{white-space:pre-wrap;word-break:break-all}
+  .tx{color:var(--amber)}
+  .rx{color:var(--ok)}
+  .sys{color:var(--dim)}
+  .err{color:var(--fault)}
+  .manual{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+  .manual label{color:var(--dim);font-size:14px}
+  input[type=number]{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;width:74px;
+    background:var(--panel);border:1px solid var(--rule);color:var(--ink);padding:8px 9px;
+  }
+  input[type=number]:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber)}
+
+  .warn{
+    border-left:3px solid var(--amber);background:var(--panel);
+    padding:13px 16px;margin-bottom:24px;font-size:15px;color:var(--dim);
+  }
+  .warn b{color:var(--ink);font-weight:500}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Bancada BLE</h1>
+  <p class="sub">Validação do protocolo do ar-condicionado antes de construir o app</p>
+</header>
+
+<div class="warn" id="support">
+  Abra esta página no <b>Chrome do Android</b> ou no Chrome/Edge de desktop, servida por <b>https</b> ou <b>localhost</b>. O Safari do iPhone não expõe Bluetooth para páginas web — no iOS a validação precisa ser feita por um app nativo.
+</div>
+
+<div class="conn">
+  <div class="lamp" id="lamp"></div>
+  <div id="connState">Nenhum aparelho conectado</div>
+  <button class="key" id="btnConnect">Procurar aparelho</button>
+  <button id="btnDisconnect" disabled>Desconectar</button>
+</div>
+
+<div class="finder">
+  <label for="devName">Nome do aparelho (do QR Code colado no equipamento)</label>
+  <div class="finder-row">
+    <input type="text" id="devName" placeholder="ex.: KT-A1B2C3" autocomplete="off">
+    <button id="btnClearName">Limpar</button>
+  </div>
+  <p class="hint" style="margin:8px 0 0">Com o nome preenchido, a lista mostra só esse aparelho. Em branco, mostra tudo que tiver <b style="color:var(--ink);font-weight:500">KT</b> no começo do nome.</p>
+</div>
+
+<div class="cluster">
+  <div class="gauge">
+    <div class="big idle" id="gTarget">--</div>
+    <div class="unit" id="gUnit">°C</div>
+  </div>
+  <p class="gauge-note" id="gAmbient">Temperatura ambiente aguardando leitura</p>
+  <div class="readouts">
+    <div class="cell"><span>Estado</span><strong id="rPower">--</strong></div>
+    <div class="cell"><span>Modo</span><strong id="rMode">--</strong></div>
+    <div class="cell"><span>Ventilador</span><strong id="rFan">--</strong></div>
+    <div class="cell"><span>Tensão</span><strong id="rVolt">--</strong></div>
+    <div class="cell"><span>Falha</span><strong id="rFault">--</strong></div>
+    <div class="cell"><span>Núcleo</span><strong id="rCore">--</strong></div>
+    <div class="cell"><span>Compressor</span><strong id="rComp">--</strong></div>
+    <div class="cell"><span>Timer</span><strong id="rTimer">--</strong></div>
+  </div>
+</div>
+
+<div class="cols">
+  <section>
+    <h2>Controles</h2>
+    <p class="hint">Cada botão monta o quadro de 9 bytes e escreve na característica FFE2.</p>
+
+    <div class="group">
+      <div class="row">
+        <button class="ctl key" data-cmd="1" data-val="1" disabled>Ligar</button>
+        <button class="ctl" data-cmd="1" data-val="2" disabled>Desligar</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Temperatura alvo</h2>
+      <div class="step">
+        <button class="ctl-temp" data-d="-1" disabled>−</button>
+        <output id="tempOut">22</output>
+        <button class="ctl-temp" data-d="1" disabled>+</button>
+        <button class="ctl-temp send" disabled>Enviar</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Modo</h2>
+      <div class="row">
+        <button class="ctl" data-cmd="2" data-val="1" disabled>Refrigerar</button>
+        <button class="ctl" data-cmd="2" data-val="8" disabled>Aquecer</button>
+        <button class="ctl" data-cmd="2" data-val="2" disabled>Ventilar</button>
+        <button class="ctl" data-cmd="2" data-val="7" disabled>Desumidificar</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Funções</h2>
+      <div class="row">
+        <button class="ctl" data-cmd="2" data-val="9" disabled>Auto</button>
+        <button class="ctl" data-cmd="2" data-val="6" disabled>Turbo</button>
+        <button class="ctl" data-cmd="2" data-val="4" disabled>Eco</button>
+        <button class="ctl" data-cmd="2" data-val="5" disabled>Sleep</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Ventilador</h2>
+      <div class="row">
+        <button class="ctl" data-cmd="4" data-val="1" disabled>1</button>
+        <button class="ctl" data-cmd="4" data-val="2" disabled>2</button>
+        <button class="ctl" data-cmd="4" data-val="3" disabled>3</button>
+        <button class="ctl" data-cmd="4" data-val="4" disabled>4</button>
+        <button class="ctl" data-cmd="4" data-val="5" disabled>5</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Outros</h2>
+      <div class="row">
+        <button class="ctl" data-cmd="69" data-val="1" disabled>Swing</button>
+        <button class="ctl" data-cmd="28" data-val="1" disabled>Luz</button>
+        <button class="ctl" data-cmd="10" data-val="2" disabled>Display</button>
+        <button class="ctl" data-cmd="68" data-val="1" disabled>Ar externo</button>
+        <button class="ctl" data-cmd="68" data-val="0" disabled>Ar interno</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quadros</h2>
+    <p class="hint">Enviados em âmbar, recebidos em verde. É aqui que você confere se a placa responde como o documento diz.</p>
+    <div class="console" id="log"><div class="sys">Aguardando conexão.</div></div>
+    <div class="manual">
+      <label for="mCmd">Comando</label>
+      <input type="number" id="mCmd" min="0" max="255" value="255">
+      <label for="mVal">Valor</label>
+      <input type="number" id="mVal" min="0" max="255" value="0">
+      <button id="btnManual" class="act" disabled>Enviar bruto</button>
+      <button id="btnClear">Limpar</button>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<script>
+const SERVICE = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const CHAR_RX = '0000ffe1-0000-1000-8000-00805f9b34fb';
+const CHAR_TX = '0000ffe2-0000-1000-8000-00805f9b34fb';
+const KIND = 1;
+
+const FAULTS = {0:'OK',1:'Ocioso',2:'EL/E1',3:'EH/E1',4:'E1',5:'EF',6:'E0',7:'E7',19:'SPv',
+  22:'E2',23:'E3',24:'E4',25:'E5',26:'E6',27:'E7',28:'E8',29:'E9',30:'H0',31:'H1',32:'Eb',
+  33:'Eu',34:'H4',36:'dA',37:'SP',51:'E01',52:'E02',53:'E03',56:'E06',57:'E07',58:'E08',
+  59:'E09',60:'E10',66:'LC',67:'Ld',68:'E18'};
+const MODES = {1:'Refrigerar',2:'Desumidificar',3:'Ventilar',4:'Aquecer'};
+
+let device=null, txChar=null, poll=null, buffer=new Uint8Array(0), target=22;
+
+const $ = id => document.getElementById(id);
+const hex = b => [...b].map(x=>x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+
+function log(text, cls){
+  const el = document.createElement('div');
+  const t = new Date().toTimeString().slice(0,8);
+  el.className = cls;
+  el.textContent = t + '  ' + text;
+  $('log').appendChild(el);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+
+function buildFrame(code, value){
+  const n = 1;
+  const f = new Uint8Array([0x5A,0x5A,5+n,KIND,code,value,0,0x0D,0x0A]);
+  f[6] = (90+90+(5+n)+KIND+code+value) & 0xFF;
+  return f;
+}
+
+function buildActivation(n){
+  const f = new Uint8Array([0x5A,0x5A,6,KIND,0x42,n,0,0x0D,0x0A]);
+  f[6] = (252 + n + KIND) & 0xFF;
+  return f;
+}
+
+async function writeFrame(frame, label){
+  if(!txChar){ log('sem conexão', 'err'); return; }
+  try{
+    if(txChar.properties.write) await txChar.writeValueWithResponse(frame.buffer);
+    else await txChar.writeValueWithoutResponse(frame.buffer);
+    log('TX  ' + hex(frame) + (label ? '   ' + label : ''), 'tx');
+  }catch(e){
+    log('falha ao escrever: ' + e.message, 'err');
+  }
+}
+
+const send = (code, value, label) => writeFrame(buildFrame(code, value), label);
+
+/* --- recepção e montagem de quadros --- */
+function onNotify(ev){
+  const chunk = new Uint8Array(ev.target.value.buffer);
+  const merged = new Uint8Array(buffer.length + chunk.length);
+  merged.set(buffer); merged.set(chunk, buffer.length);
+  buffer = merged;
+
+  const find = pair => {
+    for(let i=0;i<buffer.length-1;i++)
+      if(buffer[i]===pair[0] && buffer[i+1]===pair[1]) return i;
+    return -1;
+  };
+
+  while(buffer.length >= 5){
+    const head = find([0x5A,0x5A]);
+    if(head === -1){ buffer = new Uint8Array(0); break; }
+    if(head > 0) buffer = buffer.slice(head);
+    const tail = find([0x0D,0x0A]);
+    if(tail === -1) break;
+    const frame = buffer.slice(0, tail+2);
+    buffer = buffer.slice(tail+2);
+    log('RX  ' + hex(frame), 'rx');
+    const st = parseStatus(frame);
+    if(st) render(st);
+  }
+}
+
+function parseStatus(f){
+  if(f.length < 21){ return null; }
+  let sum = 0;
+  for(let i=0;i<f.length-3;i++) sum += f[i];
+  if((sum & 0xFF) !== f[f.length-3]){ log('checksum não confere', 'err'); return null; }
+  const a = f[2], b = f[3];
+  return {
+    power:(a>>7)&1, mode:(a>>4)&7, fan:(a>>1)&7, display:a&1,
+    turbo:(b>>7)&1, auto:(b>>6)&1, eco:(b>>5)&1, sleep:(b>>4)&1,
+    swing:(b>>3)&1, ion:(b>>2)&1, light:(b>>1)&1, windSide:b&1,
+    inlet:f[4], core:f[5], compCurrent:f[6], fanCurrent:f[7],
+    voltage:f[8], underV:f[9], fault:f[10],
+    timerOn:f[11]?1:0, tOpen:(f[12]<<8)|f[13], tClose:(f[14]<<8)|f[15],
+    unit:f[16]&1, target:f[17]
+  };
+}
+
+let confirmed = false;
+function sanityCheck(s){
+  if(confirmed) return;
+  confirmed = true;
+  const flags = [];
+  if(s.voltage < 9 || s.voltage > 32) flags.push('tensão de ' + s.voltage + ' V fora da faixa de 12/24 V');
+  if(s.inlet < 0 || s.inlet > 70) flags.push('temperatura ambiente de ' + s.inlet + ' implausível');
+  if(!MODES[s.mode]) flags.push('modo desconhecido (' + s.mode + ')');
+  if(flags.length){
+    log('quadro válido, mas com leituras estranhas: ' + flags.join('; '), 'err');
+    log('confira se este é mesmo o ar-condicionado — pode ser outro equipamento com o mesmo módulo BLE', 'err');
+  }else{
+    log('confirmado: leituras coerentes (' + s.voltage + ' V, ambiente ' + s.inlet + '°). É o ar-condicionado.', 'sys');
+  }
+}
+
+function render(s){
+  sanityCheck(s);
+  const u = s.unit ? '°F' : '°C';
+  $('gUnit').textContent = u;
+  $('gTarget').textContent = s.target;
+  $('gTarget').classList.toggle('idle', !s.power);
+  $('gAmbient').textContent = 'Ambiente ' + s.inlet + u + ' · entrada de ar ' + (s.windSide ? 'externa' : 'interna');
+
+  $('rPower').textContent = s.power ? 'Ligado' : 'Desligado';
+  $('rPower').className = s.power ? 'good' : '';
+  $('rMode').textContent = MODES[s.mode] || ('cód ' + s.mode);
+  const extras = [s.turbo&&'turbo', s.auto&&'auto', s.eco&&'eco', s.sleep&&'sleep'].filter(Boolean);
+  $('rFan').textContent = s.fan + (extras.length ? ' · ' + extras.join(' ') : '');
+  $('rVolt').textContent = s.voltage + ' V';
+  const fl = FAULTS[s.fault] ?? ('cód ' + s.fault);
+  $('rFault').textContent = fl;
+  $('rFault').className = (s.fault === 0 || s.fault === 1) ? 'good' : 'bad';
+  $('rCore').textContent = s.core + u;
+  $('rComp').textContent = s.compCurrent + ' A';
+  $('rTimer').textContent = s.timerOn ? (s.tClose + ' min') : 'desligado';
+
+  target = s.target;
+  $('tempOut').textContent = s.target;
+}
+
+/* --- conexão --- */
+function setBusy(state, text){
+  $('lamp').className = 'lamp' + (state ? ' ' + state : '');
+  $('connState').innerHTML = text;
+}
+
+async function connect(){
+  if(!navigator.bluetooth){
+    log('este navegador não expõe Web Bluetooth', 'err');
+    setBusy('', 'Navegador sem suporte a Bluetooth');
+    return;
+  }
+  try{
+    setBusy('busy', 'Procurando…');
+    const wanted = $('devName').value.trim();
+    const opts = { optionalServices: [SERVICE] };
+    if(wanted){
+      opts.filters = [{ name: wanted }];
+      log('procurando pelo nome exato "' + wanted + '"', 'sys');
+    }else{
+      opts.filters = [{ namePrefix: 'KT' }];
+      log('procurando aparelhos com nome iniciado em KT', 'sys');
+    }
+    try{
+      device = await navigator.bluetooth.requestDevice(opts);
+    }catch(err){
+      if(err.name === 'NotFoundError' && !wanted){
+        log('nada encontrado com KT — reabrindo a lista sem filtro', 'sys');
+        device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:[SERVICE] });
+      }else throw err;
+    }
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    log('aparelho selecionado: ' + (device.name || 'sem nome'), 'sys');
+
+    setBusy('busy', 'Conectando…');
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE);
+    txChar = await service.getCharacteristic(CHAR_TX);
+    const rxChar = await service.getCharacteristic(CHAR_RX);
+
+    await writeFrame(buildActivation(1), 'ativação');
+    await rxChar.startNotifications();
+    rxChar.addEventListener('characteristicvaluechanged', onNotify);
+
+    setBusy('on', 'Conectado a <b>' + (device.name || 'aparelho') + '</b>');
+    log('notificações abertas, iniciando consulta de status', 'sys');
+    document.querySelectorAll('button.ctl, button.ctl-temp, #btnManual').forEach(b => b.disabled = false);
+    $('btnDisconnect').disabled = false;
+    $('btnConnect').disabled = true;
+
+    poll = setInterval(() => send(255, 0), 3000);
+    send(255, 0);
+  }catch(e){
+    log('conexão falhou: ' + e.message, 'err');
+    setBusy('', 'Nenhum aparelho conectado');
+  }
+}
+
+function onDisconnected(){
+  clearInterval(poll); poll = null; txChar = null; buffer = new Uint8Array(0); confirmed = false;
+  setBusy('', 'Nenhum aparelho conectado');
+  document.querySelectorAll('button.ctl, button.ctl-temp, #btnManual').forEach(b => b.disabled = true);
+  $('btnDisconnect').disabled = true;
+  $('btnConnect').disabled = false;
+  log('aparelho desconectado', 'sys');
+}
+
+/* --- eventos --- */
+$('btnConnect').onclick = connect;
+$('btnDisconnect').onclick = () => { if(device?.gatt.connected) device.gatt.disconnect(); else onDisconnected(); };
+$('btnClear').onclick = () => $('log').innerHTML = '';
+$('btnClearName').onclick = () => $('devName').value = '';
+$('btnManual').onclick = () => send(+$('mCmd').value, +$('mVal').value, 'manual');
+
+document.querySelectorAll('button.ctl').forEach(b => {
+  b.onclick = () => send(+b.dataset.cmd, +b.dataset.val, b.textContent.trim());
+});
+
+document.querySelectorAll('button.ctl-temp').forEach(b => {
+  b.onclick = () => {
+    if(b.classList.contains('send')){ send(3, target, target + '°'); return; }
+    target = Math.min(30, Math.max(16, target + (+b.dataset.d)));
+    $('tempOut').textContent = target;
+  };
+});
+
+if(navigator.bluetooth) $('support').style.display = 'none';
+</script>
+</body>
+</html>

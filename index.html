@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E13">
+<meta name="description" content="Controle remoto do ar-condicionado Stonni por Bluetooth.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ar Stonni">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ar-condicionado Stonni — Controle</title>
+
+<link rel="icon" href="/icons/favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   TOKENS — identidade Stonni (extraídos de stonni.com.br)
+   ciano #00AEE7 · títulos Roboto 900 · corpo Manrope · botão cheio r≈14px
+   Tema escuro: é um controle usado na cabine, muitas vezes à noite.
+   Texto sobre o ciano é quase-preto (#04222D). Branco sobre ciano, como o
+   site usa, dá 2,5:1 — reprova AA e num controle isso atrapalha de verdade.
+   ========================================================================== */
+:root{
+  --ciano:#00AEE7;
+  --ciano-cl:#3FC6F2;
+  --ciano-es:#0089B8;
+  --ciano-tinta:rgba(0,174,231,.13);
+  --ciano-brilho:rgba(0,174,231,.32);
+  --sobre-ciano:#04222D;
+
+  --fundo:#0A0E13;
+  --sup:#141A22;
+  --sup2:#1C242E;
+  --afundado:#0D1219;
+  --linha:#28313D;
+
+  --texto:#EAF0F6;
+  --meio:#9BA7B5;
+  --fraco:#697786;
+
+  --ok:#2ED573;
+  --alerta:#FFB020;
+  --falha:#FF5A5F;
+
+  --r:14px;
+  --r-g:20px;
+  --r-p:10px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--fundo);
+  color:var(--texto);
+  font-family:'Manrope',system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  min-height:100dvh;
+  overscroll-behavior-y:contain;
+}
+/* névoa ciano no topo, mesmo clima do hero do site */
+body::before{
+  content:'';position:fixed;inset:0 0 auto;height:280px;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 100% at 50% -30%,rgba(0,174,231,.16),transparent 70%);
+}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font-family:inherit;font-size:16px}
+/* ícones: sempre traçado, nunca preenchido — herdam a cor de quem os contém */
+.ic{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--ciano);outline-offset:2px;border-radius:6px}
+
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 40px)}
+
+/* ---------- cabeçalho ---------- */
+.topo{display:flex;align-items:center;gap:11px;margin-bottom:20px}
+.marca{width:34px;height:34px;border-radius:50%;background:var(--ciano-tinta);padding:3px;flex:none}
+.marca-txt{flex:1;min-width:0;line-height:1.15}
+.marca-txt b{display:block;font-family:'Roboto',sans-serif;font-weight:900;font-size:19px;letter-spacing:-.02em}
+.marca-txt span{display:block;color:var(--meio);font-size:12px;font-weight:500;letter-spacing:.02em}
+
+.chip{display:inline-flex;align-items:center;gap:7px;flex:none;
+  background:var(--sup);border:1px solid var(--linha);border-radius:100px;
+  padding:7px 13px 7px 11px;font-size:12.5px;font-weight:600;color:var(--meio);
+  min-height:36px;transition:border-color .2s,color .2s}
+.chip .lamp{width:7px;height:7px;border-radius:50%;background:var(--fraco);flex:none}
+.chip.ligado{color:var(--ciano);border-color:rgba(0,174,231,.45)}
+.chip.ligado .lamp{background:var(--ciano);box-shadow:0 0 8px var(--ciano-brilho)}
+.chip.ocupado{color:var(--alerta);border-color:rgba(255,176,32,.4)}
+.chip.ocupado .lamp{background:var(--alerta);animation:pisca 1.1s ease-in-out infinite}
+@keyframes pisca{50%{opacity:.25}}
+
+/* ---------- tela de conexão ---------- */
+.hero{padding:26px 0 30px}
+.selo{display:inline-block;background:var(--ciano-tinta);color:var(--ciano);
+  border-radius:100px;padding:5px 13px;font-size:11.5px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;margin-bottom:16px}
+.hero h1{font-family:'Roboto',sans-serif;font-weight:900;font-size:clamp(38px,12vw,54px);
+  line-height:.94;letter-spacing:-.03em;color:var(--ciano);margin-bottom:6px}
+.hero h1 em{display:block;font-style:normal;font-weight:300;font-size:clamp(21px,6.4vw,28px);
+  color:var(--texto);letter-spacing:-.01em;line-height:1.15;margin-top:8px}
+.hero p{color:var(--meio);font-size:15px;max-width:38ch;margin-top:14px}
+
+.campo{margin:26px 0 16px}
+.campo label{display:block;font-size:12.5px;font-weight:700;color:var(--meio);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+.campo input{width:100%;background:var(--afundado);border:1px solid var(--linha);
+  border-radius:var(--r);color:var(--texto);padding:14px 15px;letter-spacing:.02em}
+.campo input::placeholder{color:var(--fraco)}
+.campo input:focus{outline:none;border-color:var(--ciano);box-shadow:0 0 0 3px var(--ciano-tinta)}
+.campo .dica{color:var(--fraco);font-size:13px;margin-top:9px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--sup2);border:1px solid var(--linha);border-radius:var(--r);
+  padding:14px 22px;font-weight:600;min-height:50px;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--fraco)}
+.btn.cheio{background:var(--ciano);border-color:var(--ciano);color:var(--sobre-ciano);font-weight:700}
+.btn.cheio:hover{background:var(--ciano-cl);border-color:var(--ciano-cl)}
+.btn.largo{width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn .ic{width:20px;height:20px}
+
+.aviso{display:flex;gap:11px;background:var(--sup);border:1px solid var(--linha);
+  border-left:3px solid var(--alerta);border-radius:var(--r-p);
+  padding:13px 15px;margin-top:22px;font-size:13.5px;color:var(--meio)}
+.aviso .ic{width:19px;height:19px;color:var(--alerta);flex:none;margin-top:1px}
+.aviso b{color:var(--texto);font-weight:600}
+
+/* ---------- cartões ---------- */
+.card{background:var(--sup);border:1px solid var(--linha);border-radius:var(--r-g);
+  padding:18px;margin-bottom:14px}
+.card > h2{display:flex;align-items:center;gap:8px;font-family:'Manrope',sans-serif;
+  font-size:12px;font-weight:700;color:var(--meio);text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:14px}
+.card > h2 .ic{width:16px;height:16px;color:var(--fraco)}
+
+/* ---------- climatizador ---------- */
+/* A névoa não pode vazar pela direita: com overflow:hidden isso torna o cartão
+   um container rolável, e qualquer controle que receba foco arrasta o conteúdo
+   90px para a esquerda, cortando a temperatura. Fica dentro, e clip por garantia. */
+.clima{background:linear-gradient(170deg,#18212B,#121820);position:relative;
+  overflow:hidden;overflow:clip}
+.clima::after{content:'';position:absolute;width:230px;height:230px;right:0;top:-110px;
+  border-radius:50%;background:var(--ciano);opacity:.09;filter:blur(46px);pointer-events:none}
+.clima-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;position:relative}
+.estado-txt{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)}
+.estado-txt.on{color:var(--ciano)}
+
+.liga{width:54px;height:54px;border-radius:50%;flex:none;
+  background:var(--sup2);border:1px solid var(--linha);color:var(--meio);
+  display:grid;place-items:center;transition:all .2s}
+.liga .ic{width:24px;height:24px;stroke-width:2}
+.liga[aria-pressed="true"]{background:var(--ciano);border-color:var(--ciano);
+  color:var(--sobre-ciano);box-shadow:0 0 22px var(--ciano-brilho)}
+
+.leitura{display:flex;align-items:flex-start;gap:6px;margin:4px 0 2px}
+.leitura .num{font-family:'Roboto',sans-serif;font-weight:900;
+  font-size:clamp(86px,27vw,116px);line-height:.84;letter-spacing:-.045em;
+  color:var(--ciano);font-variant-numeric:tabular-nums}
+.leitura .num.off{color:var(--linha)}
+.leitura .un{font-family:'Roboto',sans-serif;font-weight:500;font-size:26px;
+  color:var(--meio);margin-top:10px}
+.ambiente{color:var(--meio);font-size:14px;margin-bottom:18px}
+.ambiente b{color:var(--texto);font-weight:600}
+
+.passo{display:flex;align-items:center;gap:12px;position:relative}
+.passo button{width:56px;height:56px;border-radius:50%;flex:none;
+  background:var(--sup2);border:1px solid var(--linha);color:var(--texto);
+  display:grid;place-items:center;transition:all .15s}
+.passo button:hover:not(:disabled){border-color:var(--ciano);color:var(--ciano)}
+.passo button:active:not(:disabled){transform:scale(.94)}
+.passo button:disabled{opacity:.35;cursor:not-allowed}
+.passo .ic{width:22px;height:22px;stroke-width:2.2}
+.passo .faixa{flex:1;height:4px;border-radius:4px;background:var(--afundado);overflow:hidden}
+.passo .faixa i{display:block;height:100%;background:var(--ciano);border-radius:4px;
+  transition:width .25s ease}
+
+/* ---------- grades de botão ---------- */
+.grade4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grade2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.grade5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+
+.op{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  background:var(--sup2);border:1px solid var(--linha);border-radius:var(--r);
+  padding:13px 6px;min-height:74px;color:var(--meio);
+  font-size:11.5px;font-weight:600;letter-spacing:.01em;text-align:center;
+  transition:all .15s}
+.op .ic{width:22px;height:22px}
+.op:hover:not(:disabled){border-color:var(--fraco);color:var(--texto)}
+.op[aria-pressed="true"]{background:var(--ciano);border-color:var(--ciano);
+  color:var(--sobre-ciano);font-weight:700;box-shadow:0 0 18px rgba(0,174,231,.2)}
+.op:disabled{opacity:.35;cursor:not-allowed}
+
+/* linha de opção com rótulo à esquerda e chave à direita */
+.linha-op{display:flex;align-items:center;gap:12px;width:100%;
+  background:var(--sup2);border:1px solid var(--linha);border-radius:var(--r);
+  padding:12px 14px;min-height:54px;color:var(--texto);font-weight:600;font-size:14px;
+  transition:border-color .15s}
+.linha-op + .linha-op{margin-top:8px}
+.linha-op .ic{width:20px;height:20px;color:var(--meio);flex:none}
+.linha-op span{flex:1;text-align:left}
+.linha-op .chave{width:42px;height:24px;border-radius:100px;background:var(--afundado);
+  border:1px solid var(--linha);flex:none;position:relative;transition:all .2s}
+.linha-op .chave::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;
+  background:var(--fraco);top:3px;left:3px;transition:all .2s}
+.linha-op[aria-pressed="true"]{border-color:rgba(0,174,231,.45)}
+.linha-op[aria-pressed="true"] .ic{color:var(--ciano)}
+.linha-op[aria-pressed="true"] .chave{background:var(--ciano);border-color:var(--ciano)}
+.linha-op[aria-pressed="true"] .chave::after{left:21px;background:var(--sobre-ciano)}
+.linha-op:disabled{opacity:.35;cursor:not-allowed}
+
+/* segmentado 2 opções (ar interno/externo) */
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--afundado);
+  border:1px solid var(--linha);border-radius:var(--r);padding:4px}
+.seg button{display:flex;align-items:center;justify-content:center;gap:7px;
+  border-radius:calc(var(--r) - 5px);padding:11px 8px;min-height:44px;
+  color:var(--meio);font-size:13px;font-weight:600;transition:all .15s}
+.seg button .ic{width:18px;height:18px}
+.seg button[aria-pressed="true"]{background:var(--ciano);color:var(--sobre-ciano);font-weight:700}
+
+/* ---------- diagnóstico ---------- */
+.diag{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  background:var(--linha);border:1px solid var(--linha);border-radius:var(--r-p);overflow:hidden}
+@media(min-width:400px){.diag{grid-template-columns:repeat(3,1fr)}}
+.diag div{background:var(--sup);padding:11px 12px}
+.diag span{display:block;color:var(--fraco);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.diag strong{font-family:'Roboto',sans-serif;font-weight:500;font-size:19px;
+  letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--texto)}
+.diag strong.ok{color:var(--ok)}
+.diag strong.ruim{color:var(--falha)}
+
+/* ---------- recado ao cliente ----------
+   Ocupa o lugar do antigo log técnico. O motorista precisa saber POR QUE não
+   conectou, em português, sem ver quadro nenhum. */
+.recado{display:flex;gap:11px;align-items:flex-start;
+  background:var(--sup);border:1px solid var(--linha);border-left:3px solid var(--alerta);
+  border-radius:var(--r-p);padding:13px 15px;margin-bottom:18px;font-size:14px;color:var(--meio)}
+.recado .ic{width:19px;height:19px;color:var(--alerta);flex:none;margin-top:2px}
+.recado b{display:block;color:var(--texto);font-weight:600;margin-bottom:1px}
+.recado.ok{border-left-color:var(--ciano)}
+.recado.ok .ic{color:var(--ciano)}
+
+/* botão de instalar: só aparece quando o Chrome oferece */
+.instalar{margin-top:12px}
+
+.rodape{text-align:center;color:var(--fraco);font-size:12px;margin-top:26px;line-height:1.7}
+.rodape button{color:var(--meio);font-weight:600;text-decoration:underline;
+  text-underline-offset:3px;font-size:12px}
+
+/* ---------- desktop: duas colunas ---------- */
+@media(min-width:960px){
+  .app{max-width:1060px}
+  .grade{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  .leitura .num{font-size:104px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ícones -->
+<svg aria-hidden="true" width="0" height="0" style="position:absolute" focusable="false">
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2.8v9.4"/><path d="M18.1 5.9a8.6 8.6 0 1 1-12.2 0"/></symbol>
+  <symbol id="i-neve" viewBox="0 0 24 24"><path d="M12 2v20M3.4 7l17.2 10M20.6 7 3.4 17"/><path d="M12 6.6 9.7 4.3M12 6.6l2.3-2.3M12 17.4l-2.3 2.3M12 17.4l2.3 2.3"/></symbol>
+  <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></symbol>
+  <symbol id="i-vento" viewBox="0 0 24 24"><path d="M3 8h9.5a3 3 0 1 0-3-3"/><path d="M3 12h13a3 3 0 1 1-3 3"/><path d="M3 16h7"/></symbol>
+  <symbol id="i-gota" viewBox="0 0 24 24"><path d="M12 3.2c3.4 4 5.6 6.9 5.6 9.6a5.6 5.6 0 1 1-11.2 0c0-2.7 2.2-5.6 5.6-9.6z"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.7 16 12 7.6 15.3 16M10 13.4h4"/></symbol>
+  <symbol id="i-raio" viewBox="0 0 24 24"><path d="M13.2 2.4 5.4 13.6h5.4l-.8 8 7.9-11.2h-5.4l.7-8z"/></symbol>
+  <symbol id="i-folha" viewBox="0 0 24 24"><path d="M4.6 19.4C4.6 11.2 10 4.6 19.4 4.6c0 9.4-6.2 14.8-14.8 14.8z"/><path d="M4.6 19.4c3.8-3.8 6.8-5.8 10.6-7.6"/></symbol>
+  <symbol id="i-lua" viewBox="0 0 24 24"><path d="M20.5 14.6A8.7 8.7 0 0 1 9.4 3.5 8.7 8.7 0 1 0 20.5 14.6z"/></symbol>
+  <symbol id="i-swing" viewBox="0 0 24 24"><path d="M4 5.5h16"/><path d="M12 9.5v9"/><path d="M8.4 15 12 18.6 15.6 15"/></symbol>
+  <symbol id="i-luz" viewBox="0 0 24 24"><path d="M9.6 18.2h4.8M10.2 21h3.6"/><path d="M12 3a6 6 0 0 1 3.6 10.8c-.6.5-.9 1.1-1 1.8H9.4c-.1-.7-.4-1.3-1-1.8A6 6 0 0 1 12 3z"/></symbol>
+  <symbol id="i-tela" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="2.2"/><path d="M8.6 21h6.8M12 17v4"/></symbol>
+  <symbol id="i-recirc" viewBox="0 0 24 24"><path d="M4.5 9.5h12a3.5 3.5 0 0 1 0 7h-4.5"/><path d="M7 7 4.5 9.5 7 12"/><path d="M14.5 14 12 16.5l2.5 2.5"/></symbol>
+  <symbol id="i-externo" viewBox="0 0 24 24"><path d="M20 3.5v17"/><path d="M3.5 12h12.5"/><path d="M12 7.8 16.2 12 12 16.2"/></symbol>
+  <symbol id="i-bt" viewBox="0 0 24 24"><path d="M7 7.6 17 16.4 12 21V3l5 4.6L7 16.4"/></symbol>
+  <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5.5 12h13"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><path d="M14 14.9V5.2a2 2 0 1 0-4 0v9.7a4 4 0 1 0 4 0z"/></symbol>
+  <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M12 3.4 22.2 20.6H1.8L12 3.4z"/><path d="M12 10v4.6M12 17.5v.1"/></symbol>
+  <symbol id="i-pulso" viewBox="0 0 24 24"><path d="M2.5 12h4l2.5-6 4 12 2.5-6h6"/></symbol>
+  <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3.2v11"/><path d="M7.8 10.2 12 14.4l4.2-4.2"/><path d="M4.6 17.4v1.4a2 2 0 0 0 2 2h10.8a2 2 0 0 0 2-2v-1.4"/></symbol>
+</svg>
+
+<div class="app">
+
+  <header class="topo">
+    <img class="marca" alt="" width="34" height="34" src="/icons/icon-192.png">
+    <div class="marca-txt">
+      <b>Stonni</b>
+      <span>Ar-condicionado</span>
+    </div>
+    <button class="chip" id="chip" type="button">
+      <i class="lamp"></i><span id="chipTxt">Desconectado</span>
+    </button>
+  </header>
+
+  <!-- recado ao cliente — serve às duas telas, por isso fica fora delas -->
+  <div class="recado" id="recado" hidden>
+    <svg class="ic"><use href="#i-aviso"/></svg>
+    <div id="recadoTxt"></div>
+  </div>
+
+  <!-- ================= TELA: CONECTAR ================= -->
+  <section id="telaConectar">
+    <div class="hero">
+      <div class="selo">Controle por Bluetooth</div>
+      <h1>Seu ar<em>na palma da mão, dentro da cabine.</em></h1>
+      <p>Ligue o Bluetooth do celular, aproxime-se do equipamento e conecte. O controle
+         funciona sem internet.</p>
+    </div>
+
+    <div class="campo">
+      <label for="nomeAp">Nome do aparelho</label>
+      <input type="text" id="nomeAp" placeholder="ex.: KT-A1B2C3" autocomplete="off"
+             autocapitalize="characters" spellcheck="false">
+      <p class="dica">Está no QR Code colado no equipamento. Em branco, a busca mostra todo
+         aparelho começando com <b style="color:var(--texto)">KT</b>.</p>
+    </div>
+
+    <button class="btn cheio largo" id="btnConectar" type="button">
+      <svg class="ic"><use href="#i-bt"/></svg> Procurar aparelho
+    </button>
+
+    <button class="btn largo instalar" id="btnInstalar" type="button" hidden>
+      <svg class="ic"><use href="#i-baixar"/></svg> Instalar na tela inicial
+    </button>
+
+    <div class="aviso" id="avisoSuporte" hidden>
+      <svg class="ic"><use href="#i-aviso"/></svg>
+      <div id="avisoTxt"></div>
+    </div>
+  </section>
+
+  <!-- ================= TELA: CONTROLE ================= -->
+  <main id="telaControle" hidden>
+    <div class="grade">
+      <div>
+
+        <section class="card clima">
+          <div class="clima-topo">
+            <div>
+              <div class="estado-txt" id="estadoTxt">Desligado</div>
+              <div class="leitura">
+                <div class="num off" id="alvoNum">--</div>
+                <div class="un" id="alvoUn">°C</div>
+              </div>
+            </div>
+            <button class="liga" id="btnLiga" type="button" aria-pressed="false" aria-label="Ligar ou desligar">
+              <svg class="ic"><use href="#i-power"/></svg>
+            </button>
+          </div>
+          <p class="ambiente" id="ambiente">Lendo o equipamento…</p>
+          <div class="passo">
+            <button id="btnMenos" type="button" aria-label="Diminuir temperatura">
+              <svg class="ic"><use href="#i-menos"/></svg>
+            </button>
+            <div class="faixa"><i id="faixaTemp" style="width:0"></i></div>
+            <button id="btnMais" type="button" aria-label="Aumentar temperatura">
+              <svg class="ic"><use href="#i-mais"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><svg class="ic"><use href="#i-term"/></svg> Modo</h2>
+          <div class="grade4">
+            <button class="op modo" type="button" data-cmd="2" data-val="1" data-est="1" aria-pressed="false">
+              <svg class="ic"><use href="#i-neve"/></svg> Refrigerar</button>
+            <button class="op modo" type="button" data-cmd="2" data-val="8" data-est="4" aria-pressed="false">
+              <svg class="ic"><use href="#i-sol"/></svg> Aquecer</button>
+            <button class="op modo" type="button" data-cmd="2" data-val="2" data-est="3" aria-pressed="false">
+              <svg class="ic"><use href="#i-vento"/></svg> Ventilar</button>
+            <button class="op modo" type="button" data-cmd="2" data-val="7" data-est="2" aria-pressed="false">
+              <svg class="ic"><use href="#i-gota"/></svg> Desumid.</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><svg class="ic"><use href="#i-vento"/></svg> Ventilador</h2>
+          <div class="grade5" id="grupoVent">
+            <button class="op vent" type="button" data-val="1" aria-pressed="false">1</button>
+            <button class="op vent" type="button" data-val="2" aria-pressed="false">2</button>
+            <button class="op vent" type="button" data-val="3" aria-pressed="false">3</button>
+            <button class="op vent" type="button" data-val="4" aria-pressed="false">4</button>
+            <button class="op vent" type="button" data-val="5" aria-pressed="false">5</button>
+          </div>
+        </section>
+
+      </div>
+      <div>
+
+        <section class="card">
+          <h2><svg class="ic"><use href="#i-raio"/></svg> Funções</h2>
+          <div class="grade4">
+            <button class="op fn" type="button" data-cmd="2" data-val="9" data-est="auto" aria-pressed="false">
+              <svg class="ic"><use href="#i-auto"/></svg> Auto</button>
+            <button class="op fn" type="button" data-cmd="2" data-val="6" data-est="turbo" aria-pressed="false">
+              <svg class="ic"><use href="#i-raio"/></svg> Turbo</button>
+            <button class="op fn" type="button" data-cmd="2" data-val="4" data-est="eco" aria-pressed="false">
+              <svg class="ic"><use href="#i-folha"/></svg> Eco</button>
+            <button class="op fn" type="button" data-cmd="2" data-val="5" data-est="sleep" aria-pressed="false">
+              <svg class="ic"><use href="#i-lua"/></svg> Sleep</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><svg class="ic"><use href="#i-swing"/></svg> Ajustes</h2>
+          <button class="linha-op chv" type="button" data-chave="swing" aria-pressed="false">
+            <svg class="ic"><use href="#i-swing"/></svg><span>Oscilação (swing)</span><i class="chave"></i>
+          </button>
+          <button class="linha-op chv" type="button" data-chave="luz" aria-pressed="false">
+            <svg class="ic"><use href="#i-luz"/></svg><span>Luz</span><i class="chave"></i>
+          </button>
+          <button class="linha-op chv" type="button" data-chave="display" aria-pressed="false">
+            <svg class="ic"><use href="#i-tela"/></svg><span>Display</span><i class="chave"></i>
+          </button>
+
+          <h2 style="margin:18px 0 10px"><svg class="ic"><use href="#i-recirc"/></svg> Entrada de ar</h2>
+          <div class="seg" id="grupoAr">
+            <button type="button" data-val="0" aria-pressed="false">
+              <svg class="ic"><use href="#i-recirc"/></svg> Interno</button>
+            <button type="button" data-val="1" aria-pressed="false">
+              <svg class="ic"><use href="#i-externo"/></svg> Externo</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2><svg class="ic"><use href="#i-pulso"/></svg> Diagnóstico</h2>
+          <div class="diag">
+            <div><span>Tensão</span><strong id="dTensao">--</strong></div>
+            <div><span>Falha</span><strong id="dFalha">--</strong></div>
+            <div><span>Núcleo</span><strong id="dNucleo">--</strong></div>
+            <div><span>Compressor</span><strong id="dComp">--</strong></div>
+            <div><span>Vent. (A)</span><strong id="dVentA">--</strong></div>
+            <div><span>Timer</span><strong id="dTimer">--</strong></div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <p class="rodape">
+      <button id="btnSair" type="button">Desconectar aparelho</button><br>
+      Stonni · controle local por Bluetooth
+    </p>
+  </main>
+
+</div>
+
+<script>
+/* ==========================================================================
+   PROTOCOLO — idêntico ao testador validado na bancada.
+   Não mexer sem reconferir com o equipamento na mão.
+   ========================================================================== */
+const SERVICO = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const CAR_RX  = '0000ffe1-0000-1000-8000-00805f9b34fb';
+const CAR_TX  = '0000ffe2-0000-1000-8000-00805f9b34fb';
+const TIPO    = 1;
+
+const TEMP_MIN = 16, TEMP_MAX = 30;
+const POLL_MS  = 3000;
+
+/* Chaves liga/desliga. "lig" veio do testador (validado). "des" segue a convenção
+   do comando de energia (1 = liga, 2 = desliga) — é o único ponto do protocolo
+   ainda não confirmado na bancada; se o desligar não responder, é aqui que muda. */
+const CHAVES = {
+  swing:   { cmd:69, lig:1, des:2, campo:'swing'   },
+  luz:     { cmd:28, lig:1, des:2, campo:'light'   },
+  display: { cmd:10, lig:1, des:2, campo:'display' }
+};
+
+const FALHAS = {0:'OK',1:'Ocioso',2:'EL/E1',3:'EH/E1',4:'E1',5:'EF',6:'E0',7:'E7',19:'SPv',
+  22:'E2',23:'E3',24:'E4',25:'E5',26:'E6',27:'E7',28:'E8',29:'E9',30:'H0',31:'H1',32:'Eb',
+  33:'Eu',34:'H4',36:'dA',37:'SP',51:'E01',52:'E02',53:'E03',56:'E06',57:'E07',58:'E08',
+  59:'E09',60:'E10',66:'LC',67:'Ld',68:'E18'};
+const MODOS = {1:'Refrigerar',2:'Desumidificar',3:'Ventilar',4:'Aquecer'};
+
+let aparelho=null, carTx=null, poll=null, buffer=new Uint8Array(0);
+let ultimo=null, conferido=false, tentandoVoltar=0, timerTemp=null;
+
+const $  = id => document.getElementById(id);
+const hx = b => [...b].map(x=>x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+const vibra = ms => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+
+/* ---------- diagnóstico ----------
+   Este app é do cliente final: quadro em hexadecimal não vai para a tela. O
+   rastro vai para o console, que a assistência lê por depuração remota do
+   Chrome (chrome://inspect) quando precisa investigar um aparelho. Quem fala
+   com o motorista é a função recado(), logo abaixo. */
+function log(txt, cls){
+  const linha = new Date().toTimeString().slice(0,8) + '  ' + txt;
+  if(cls === 'err') console.error('[stonni]', linha);
+  else console.log('[stonni]', linha);
+}
+
+/* Mensagem visível, em português comum. `tipo` 'ok' pinta de ciano em vez de
+   âmbar; sem argumento nenhum, some. */
+function recado(titulo, texto, tipo){
+  const cx = $('recado');
+  if(!titulo){ cx.hidden = true; return; }
+  $('recadoTxt').innerHTML = '<b>' + titulo + '</b>' + (texto || '');
+  cx.className = 'recado' + (tipo === 'ok' ? ' ok' : '');
+  cx.hidden = false;
+}
+
+/* Traduz a falha do Web Bluetooth para algo acionável. Cancelar a lista é
+   intenção do usuário, não erro — devolve null e nada aparece. */
+function recadoDeErro(e){
+  const n = e && e.name;
+  if(n === 'NotFoundError' && /cancel/i.test(e.message || '')) return null;
+  if(n === 'NotFoundError')
+    return ['Nenhum aparelho encontrado.',
+      ' Confira se o ar está ligado na chave e se você está perto dele.'];
+  if(n === 'SecurityError' || n === 'NotAllowedError')
+    return ['O navegador bloqueou o Bluetooth.',
+      ' Abra o app pelo endereço oficial e autorize o acesso quando ele pedir.'];
+  if(n === 'NotSupportedError' || n === 'NetworkError')
+    return ['Não consegui falar com o aparelho.',
+      ' Desligue e ligue o ar na chave, espere alguns segundos e tente de novo.'];
+  return ['Não foi possível conectar.', ' Tente de novo em alguns segundos.'];
+}
+
+/* ---------- montagem de quadro ---------- */
+function montaQuadro(codigo, valor){
+  const n = 1;
+  const f = new Uint8Array([0x5A,0x5A,5+n,TIPO,codigo,valor,0,0x0D,0x0A]);
+  f[6] = (90+90+(5+n)+TIPO+codigo+valor) & 0xFF;
+  return f;
+}
+function montaAtivacao(n){
+  const f = new Uint8Array([0x5A,0x5A,6,TIPO,0x42,n,0,0x0D,0x0A]);
+  f[6] = (252 + n + TIPO) & 0xFF;
+  return f;
+}
+async function escreve(quadro, rotulo){
+  if(!carTx){ log('sem conexão', 'err'); return false; }
+  try{
+    if(carTx.properties.write) await carTx.writeValueWithResponse(quadro.buffer);
+    else await carTx.writeValueWithoutResponse(quadro.buffer);
+    log('TX  ' + hx(quadro) + (rotulo ? '   ' + rotulo : ''), 'tx');
+    return true;
+  }catch(e){
+    log('falha ao escrever: ' + e.message, 'err');
+    return false;
+  }
+}
+const envia = (codigo, valor, rotulo) => escreve(montaQuadro(codigo, valor), rotulo);
+
+/* ---------- recepção ---------- */
+function aoNotificar(ev){
+  const pedaco = new Uint8Array(ev.target.value.buffer);
+  const junto = new Uint8Array(buffer.length + pedaco.length);
+  junto.set(buffer); junto.set(pedaco, buffer.length);
+  buffer = junto;
+
+  const acha = par => {
+    for(let i=0;i<buffer.length-1;i++)
+      if(buffer[i]===par[0] && buffer[i+1]===par[1]) return i;
+    return -1;
+  };
+
+  while(buffer.length >= 5){
+    const ini = acha([0x5A,0x5A]);
+    if(ini === -1){ buffer = new Uint8Array(0); break; }
+    if(ini > 0) buffer = buffer.slice(ini);
+    const fim = acha([0x0D,0x0A]);
+    if(fim === -1) break;
+    const quadro = buffer.slice(0, fim+2);
+    buffer = buffer.slice(fim+2);
+    log('RX  ' + hx(quadro), 'rx');
+    const st = leStatus(quadro);
+    if(st){ ultimo = st; confere(st); pinta(); }
+  }
+}
+
+function leStatus(f){
+  if(f.length < 21) return null;
+  let soma = 0;
+  for(let i=0;i<f.length-3;i++) soma += f[i];
+  if((soma & 0xFF) !== f[f.length-3]){ log('checksum não confere', 'err'); return null; }
+  const a = f[2], b = f[3];
+  return {
+    power:(a>>7)&1, mode:(a>>4)&7, fan:(a>>1)&7, display:a&1,
+    turbo:(b>>7)&1, auto:(b>>6)&1, eco:(b>>5)&1, sleep:(b>>4)&1,
+    swing:(b>>3)&1, ion:(b>>2)&1, light:(b>>1)&1, windSide:b&1,
+    inlet:f[4], core:f[5], compCurrent:f[6], fanCurrent:f[7],
+    voltage:f[8], underV:f[9], fault:f[10],
+    timerOn:f[11]?1:0, tOpen:(f[12]<<8)|f[13], tClose:(f[14]<<8)|f[15],
+    unit:f[16]&1, target:f[17]
+  };
+}
+
+/* Confere uma única vez se as leituras batem com um ar-condicionado de verdade. */
+function confere(s){
+  if(conferido) return;
+  conferido = true;
+  const estranho = [];
+  if(s.voltage < 9 || s.voltage > 32) estranho.push('tensão de ' + s.voltage + ' V fora da faixa de 12/24 V');
+  if(s.inlet < 0 || s.inlet > 70) estranho.push('temperatura ambiente de ' + s.inlet + ' implausível');
+  if(!MODOS[s.mode]) estranho.push('modo desconhecido (' + s.mode + ')');
+  if(estranho.length){
+    log('quadro válido, mas com leituras estranhas: ' + estranho.join('; '), 'err');
+    log('confira se este é mesmo o ar-condicionado — pode ser outro equipamento com o mesmo módulo BLE', 'err');
+  }else{
+    log('confirmado: leituras coerentes (' + s.voltage + ' V, ambiente ' + s.inlet + '°)', 'sis');
+  }
+}
+
+/* ==========================================================================
+   ESTADO OTIMISTA
+   O status chega de 3 em 3 s. Sem isso, o botão que você acabou de tocar
+   volta sozinho até o equipamento responder. Cada marca vale até o aparelho
+   confirmar o mesmo valor, ou até o prazo estourar.
+   ========================================================================== */
+const otim = {};
+function marca(chave, v, ms){
+  otim[chave] = { v, ate: Date.now() + (ms || 4500) };
+}
+function valor(chave, real){
+  const o = otim[chave];
+  if(!o) return real;
+  if(o.v === real || Date.now() > o.ate){ delete otim[chave]; return real; }
+  return o.v;
+}
+
+/* ---------- pintura da tela ---------- */
+function pinta(){
+  const s = ultimo;
+  const un   = s && s.unit ? '°F' : '°C';
+  const lig  = valor('power', s ? s.power : 0);
+  const alvo = valor('alvo',  s ? s.target : 22);
+  const modo = valor('modo',  s ? s.mode : 0);
+  const vent = valor('vent',  s ? s.fan : 0);
+  const ar   = valor('ar',    s ? s.windSide : 0);
+
+  $('alvoUn').textContent = un;
+  $('alvoNum').textContent = s ? alvo : '--';
+  $('alvoNum').classList.toggle('off', !lig);
+  $('estadoTxt').textContent = lig ? 'Ligado' : 'Desligado';
+  $('estadoTxt').classList.toggle('on', !!lig);
+  $('btnLiga').setAttribute('aria-pressed', lig ? 'true' : 'false');
+
+  const pct = Math.max(0, Math.min(100, ((alvo - TEMP_MIN) / (TEMP_MAX - TEMP_MIN)) * 100));
+  $('faixaTemp').style.width = (s ? pct : 0) + '%';
+
+  $('ambiente').innerHTML = s
+    ? 'Ambiente <b>' + s.inlet + un + '</b> · ar ' + (ar ? 'externo' : 'interno')
+    : 'Lendo o equipamento…';
+
+  document.querySelectorAll('.modo').forEach(b =>
+    b.setAttribute('aria-pressed', (+b.dataset.est === modo) ? 'true' : 'false'));
+  document.querySelectorAll('.vent').forEach(b =>
+    b.setAttribute('aria-pressed', (+b.dataset.val === vent) ? 'true' : 'false'));
+  document.querySelectorAll('.fn').forEach(b => {
+    const on = s ? valor('fn:' + b.dataset.est, s[b.dataset.est]) : 0;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('.chv').forEach(b => {
+    const cfg = CHAVES[b.dataset.chave];
+    const on = s ? valor('chv:' + b.dataset.chave, s[cfg.campo]) : 0;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.querySelectorAll('#grupoAr button').forEach(b =>
+    b.setAttribute('aria-pressed', (+b.dataset.val === ar) ? 'true' : 'false'));
+
+  if(!s) return;
+  $('dTensao').textContent = s.voltage + ' V';
+  const f = FALHAS[s.fault] !== undefined ? FALHAS[s.fault] : ('cód ' + s.fault);
+  $('dFalha').textContent  = f;
+  $('dFalha').className    = (s.fault === 0 || s.fault === 1) ? 'ok' : 'ruim';
+  $('dNucleo').textContent = s.core + un;
+  $('dComp').textContent   = s.compCurrent + ' A';
+  $('dVentA').textContent  = s.fanCurrent + ' A';
+  $('dTimer').textContent  = s.timerOn ? (s.tClose + ' min') : 'desligado';
+}
+
+/* ---------- temperatura ---------- */
+function mexeTemp(d){
+  const base = valor('alvo', ultimo ? ultimo.target : 22);
+  const novo = Math.min(TEMP_MAX, Math.max(TEMP_MIN, base + d));
+  if(novo === base) return;
+  vibra(8);
+  marca('alvo', novo, 9000);
+  pinta();
+  clearTimeout(timerTemp);
+  timerTemp = setTimeout(() => {
+    marca('alvo', novo, 6000);
+    envia(3, novo, novo + '°');
+  }, 600);
+}
+
+/* ---------- conexão ---------- */
+function estado(cls, txt){
+  $('chip').className = 'chip' + (cls ? ' ' + cls : '');
+  $('chipTxt').textContent = txt;
+}
+function mostraTela(conectado){
+  $('telaConectar').hidden = conectado;
+  $('telaControle').hidden = !conectado;
+}
+
+async function conectar(){
+  if(!navigator.bluetooth){
+    estado('', 'Sem Bluetooth');
+    log('este navegador não expõe Web Bluetooth', 'err');
+    return;
+  }
+  try{
+    estado('ocupado', 'Procurando…');
+    recado();
+    const nome = $('nomeAp').value.trim();
+    const opc = { optionalServices:[SERVICO] };
+    if(nome){
+      opc.filters = [{ name: nome }];
+      log('procurando pelo nome exato "' + nome + '"');
+      try{ localStorage.setItem('stonni_ar_nome', nome); }catch(e){}
+    }else{
+      opc.filters = [{ namePrefix: 'KT' }];
+      log('procurando aparelhos com nome iniciado em KT');
+    }
+    try{
+      aparelho = await navigator.bluetooth.requestDevice(opc);
+    }catch(err){
+      if(err.name === 'NotFoundError' && !nome){
+        log('nada encontrado com KT — reabrindo a lista sem filtro');
+        aparelho = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:[SERVICO] });
+      }else throw err;
+    }
+    aparelho.addEventListener('gattserverdisconnected', caiu);
+    log('aparelho selecionado: ' + (aparelho.name || 'sem nome'));
+    await abrirSessao();
+  }catch(e){
+    log('conexão falhou: ' + e.name + ' — ' + e.message, 'err');
+    const r = recadoDeErro(e);
+    if(r) recado(r[0], r[1]);
+    estado('', 'Desconectado');
+    mostraTela(false);
+  }
+}
+
+/* Abre GATT + notificações. Usada na conexão e na reconexão automática. */
+async function abrirSessao(){
+  estado('ocupado', 'Conectando…');
+  const servidor = await aparelho.gatt.connect();
+  const servico  = await servidor.getPrimaryService(SERVICO);
+  carTx = await servico.getCharacteristic(CAR_TX);
+  const carRx = await servico.getCharacteristic(CAR_RX);
+
+  await escreve(montaAtivacao(1), 'ativação');
+  await carRx.startNotifications();
+  carRx.addEventListener('characteristicvaluechanged', aoNotificar);
+
+  tentandoVoltar = 0;
+  estado('ligado', aparelho.name || 'Conectado');
+  log('notificações abertas, consultando status');
+  recado();
+  mostraTela(true);
+  pinta();
+
+  clearInterval(poll);
+  poll = setInterval(() => { if(!document.hidden) envia(255, 0); }, POLL_MS);
+  envia(255, 0);
+}
+
+/* Zera tudo que veio do aparelho. A tela volta a "--" em vez de mentir
+   com o último status recebido. */
+function limpaSessao(){
+  clearInterval(poll); poll = null;
+  carTx = null; buffer = new Uint8Array(0); conferido = false; ultimo = null;
+  for(const k in otim) delete otim[k];
+}
+
+function caiu(){
+  limpaSessao();
+  if(!aparelho) return;               // saída pedida pelo usuário, já tratada
+  log('aparelho desconectado', 'err');
+  tentaVoltar();
+}
+
+/* Bluetooth em caminhão cai. Cada falha agenda a próxima tentativa — a cadeia
+   precisa se sustentar sozinha, senão o chip trava em "Reconectando (1/3)". */
+function tentaVoltar(){
+  if(!aparelho || tentandoVoltar >= 3){
+    if(tentandoVoltar >= 3)
+      recado('Não consegui reconectar.',
+             ' Toque em <b style="font-weight:600">Procurar aparelho</b> para tentar de novo.');
+    estado('', 'Desconectado');
+    mostraTela(false);
+    return;
+  }
+  tentandoVoltar++;
+  estado('ocupado', 'Reconectando (' + tentandoVoltar + '/3)…');
+  recado('A conexão caiu.', ' Tentando reconectar sozinho (' + tentandoVoltar + ' de 3)…');
+  setTimeout(() => {
+    if(carTx || !aparelho) return;    // já voltou, ou o usuário desistiu
+    abrirSessao().catch(e => {
+      log('reconexão falhou: ' + e.message, 'err');
+      tentaVoltar();
+    });
+  }, 2000 * tentandoVoltar);
+}
+
+function desconectar(){
+  const ap = aparelho;
+  aparelho = null;                    // corta a reconexão automática
+  tentandoVoltar = 0;
+  limpaSessao();
+  if(ap && ap.gatt.connected) ap.gatt.disconnect();
+  log('desconectado pelo usuário');
+  recado();
+  estado('', 'Desconectado');
+  mostraTela(false);
+}
+
+/* ---------- eventos ---------- */
+$('btnConectar').onclick = conectar;
+$('btnSair').onclick = desconectar;
+$('chip').onclick = () => { if(carTx) desconectar(); else conectar(); };
+
+$('btnLiga').onclick = () => {
+  const lig = valor('power', ultimo ? ultimo.power : 0);
+  vibra(14);
+  marca('power', lig ? 0 : 1);
+  pinta();
+  envia(1, lig ? 2 : 1, lig ? 'Desligar' : 'Ligar');
+};
+
+$('btnMenos').onclick = () => mexeTemp(-1);
+$('btnMais').onclick  = () => mexeTemp(1);
+
+document.querySelectorAll('.modo').forEach(b => {
+  b.onclick = () => {
+    vibra(10);
+    marca('modo', +b.dataset.est);
+    pinta();
+    envia(+b.dataset.cmd, +b.dataset.val, b.textContent.trim());
+  };
+});
+
+document.querySelectorAll('.vent').forEach(b => {
+  b.onclick = () => {
+    vibra(10);
+    marca('vent', +b.dataset.val);
+    pinta();
+    envia(4, +b.dataset.val, 'Ventilador ' + b.dataset.val);
+  };
+});
+
+document.querySelectorAll('.fn').forEach(b => {
+  b.onclick = () => {
+    vibra(10);
+    const campo = b.dataset.est;
+    const on = ultimo ? valor('fn:' + campo, ultimo[campo]) : 0;
+    marca('fn:' + campo, on ? 0 : 1);
+    pinta();
+    envia(+b.dataset.cmd, +b.dataset.val, b.textContent.trim());
+  };
+});
+
+document.querySelectorAll('.chv').forEach(b => {
+  b.onclick = () => {
+    vibra(10);
+    const nome = b.dataset.chave, cfg = CHAVES[nome];
+    const on = ultimo ? valor('chv:' + nome, ultimo[cfg.campo]) : 0;
+    marca('chv:' + nome, on ? 0 : 1);
+    pinta();
+    envia(cfg.cmd, on ? cfg.des : cfg.lig, b.querySelector('span').textContent + (on ? ' off' : ' on'));
+  };
+});
+
+document.querySelectorAll('#grupoAr button').forEach(b => {
+  b.onclick = () => {
+    vibra(10);
+    marca('ar', +b.dataset.val);
+    pinta();
+    envia(68, +b.dataset.val, +b.dataset.val ? 'Ar externo' : 'Ar interno');
+  };
+});
+
+$('nomeAp').addEventListener('keydown', e => { if(e.key === 'Enter') conectar(); });
+
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && carTx) envia(255, 0);
+});
+
+/* ---------- suporte do navegador ---------- */
+(function(){
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(navigator.bluetooth) return;
+  const a = $('avisoSuporte');
+  $('avisoTxt').innerHTML = iOS
+    ? '<b>iPhone e iPad não abrem Bluetooth pelo navegador.</b> É limitação da Apple, não do equipamento. Use um Android com Chrome — ou o app nativo, quando estiver publicado.'
+    : '<b>Este navegador não expõe Bluetooth.</b> Abra no Chrome do Android, ou no Chrome/Edge do computador, sempre por <b>https</b> ou <b>localhost</b>.';
+  a.hidden = false;
+  $('btnConectar').disabled = true;
+})();
+
+/* último nome usado */
+try{
+  const n = localStorage.getItem('stonni_ar_nome');
+  if(n) $('nomeAp').value = n;
+}catch(e){}
+
+/* ==========================================================================
+   INSTALAÇÃO NA TELA INICIAL
+   O Chrome do Android dispara beforeinstallprompt quando o app cumpre os
+   critérios (https, manifest com ícone de 192 e 512, service worker com
+   fetch). Guardamos o evento e mostramos um botão próprio — sem isso o
+   motorista teria que achar "Instalar app" no menu de três pontinhos.
+   ========================================================================== */
+let convite = null;
+const jaInstalado = () =>
+  matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();                 // impede o banner padrão; o botão é nosso
+  if(jaInstalado()) return;
+  convite = e;
+  $('btnInstalar').hidden = false;
+});
+
+$('btnInstalar').onclick = async () => {
+  if(!convite) return;
+  $('btnInstalar').hidden = true;
+  convite.prompt();
+  const r = await convite.userChoice.catch(() => null);
+  convite = null;
+  if(r && r.outcome === 'accepted')
+    recado('App instalado.', ' Abra pelo ícone da Stonni na tela inicial.', 'ok');
+};
+
+window.addEventListener('appinstalled', () => {
+  convite = null;
+  $('btnInstalar').hidden = true;
+});
+
+/* PWA */
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
