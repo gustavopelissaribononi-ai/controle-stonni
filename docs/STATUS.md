@@ -161,6 +161,19 @@ Duas telas: conectar → controle.
 - Poll pausa com a tela em segundo plano e dispara na volta.
 - Guarda o último nome de aparelho usado.
 
+## Avisos ao cliente (10/09/2026)
+
+Dois fatos que o cliente precisa saber **antes** de tentar, e que geravam chamado à toa:
+
+- **O ar não precisa estar ligado** para o controle conectar. Aparece na tela de instalação e
+  na de conectar.
+- **É para celular Android; no computador não funciona.**
+
+⚠️ Isso obrigou a corrigir duas mensagens de erro que diziam o contrário — *"Confira se o ar
+está ligado na chave"* em `recadoDeErro()` e na falha de reconexão. Elas mandavam o cliente
+fazer justamente o que não é necessário. Se algum texto novo mencionar ligar o ar antes de
+conectar, está errado.
+
 ## O site só instala; o controle só roda instalado (10/09/2026)
 
 Decisão do produto: quem abre `controle.stonni.com.br` pelo navegador **não usa o controle** —
@@ -270,14 +283,10 @@ RX  5A 5A 96 0A 1B 0D 08 02 19 15 ...
 confirmado chv:display em 1.0 s
 ```
 
-🚧 **Enquanto durar a validação, o painel nasce VISÍVEL** — em qualquer aparelho e em qualquer
-conexão, não só no modo teste. Começou escondido atrás de 5 toques no logo, mas na bancada
-isso atrapalha: quem está com o equipamento na mão precisa ver o log sem lembrar de gesto. Os
-5 toques continuam escondendo e mostrando, e a escolha fica no `localStorage`.
-
-⚠️ **Antes de publicar para o cliente, devolver o `hidden` ao `<section id="painelTec">` e
-inverter a leitura do `localStorage`** (voltar a mostrar só quando valer `'1'`). Está na lista
-de pendências. Cliente final não pode ver envio bruto de comando.
+✅ **A validação de bancada terminou em 10/09/2026 e o painel voltou a nascer escondido.**
+Ele é ferramenta de assistência: **5 toques no logo** do cabeçalho mostram, mais 5 escondem, e
+a escolha fica no `localStorage`. Quem nunca fez o gesto nunca vê — testado com o
+`localStorage` limpo.
 
 O `log()` escreve no painel mesmo com ele escondido, então dá para ligar no meio de um teste e
 o histórico já está lá.
@@ -419,10 +428,6 @@ mudou:
 
 ## Pendências
 
-- [ ] 🚧 **Esconder o painel de requisições antes de publicar para o cliente.** Hoje ele nasce
-      visível de propósito, para a validação de bancada. Devolver `hidden` ao
-      `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
-      valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
 - [ ] **Confirmar o display com a polaridade nova** (`10 / 1` apaga, `10 / 2` acende). A
       energia foi confirmada no equipamento; o display segue a mesma convenção por dedução,
       e ainda não foi visto funcionando.

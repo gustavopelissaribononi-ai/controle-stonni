@@ -342,6 +342,14 @@ input{font-family:inherit;font-size:16px}
 .recado.ok .ic{color:var(--ciano)}
 
 /* passo a passo de instalação manual, quando o Chrome não oferece o botão */
+/* notas da tela de instalação: o que a pessoa precisa saber antes de tentar */
+.notas{list-style:none;margin:22px 0 4px}
+.notas li{display:flex;gap:11px;align-items:flex-start;margin-bottom:11px;
+  color:var(--meio);font-size:14px;line-height:1.45}
+.notas .ic{width:19px;height:19px;flex:none;margin-top:2px;color:var(--ciano)}
+.notas li:last-child .ic{color:var(--alerta)}
+.notas b{color:var(--texto);font-weight:600}
+
 .passos{list-style:none;counter-reset:p;margin:0 0 4px}
 .passos li{counter-increment:p;position:relative;padding:0 0 0 38px;margin-bottom:12px;
   color:var(--meio);font-size:14.5px;line-height:1.45}
@@ -467,6 +475,14 @@ input{font-family:inherit;font-size:16px}
          instalado no celular, e não por esta página.</p>
     </div>
 
+    <ul class="notas">
+      <li><svg class="ic"><use href="#i-ok"/></svg>
+          <span><b>Não precisa ligar o ar.</b> O controle conecta com o equipamento
+          desligado.</span></li>
+      <li><svg class="ic"><use href="#i-aviso"/></svg>
+          <span><b>É para celular Android.</b> No computador não funciona.</span></li>
+    </ul>
+
     <button class="btn cheio largo" id="btnInstalar" type="button" hidden>
       <svg class="ic"><use href="#i-baixar"/></svg> Instalar no celular
     </button>
@@ -520,6 +536,9 @@ input{font-family:inherit;font-size:16px}
     <button class="btn cheio largo" id="btnConectar" type="button">
       <svg class="ic"><use href="#i-bt"/></svg> Procurar aparelho
     </button>
+
+    <p class="dica" style="text-align:center;margin-top:13px">Não precisa ligar o ar antes —
+       ele conecta com o equipamento desligado.</p>
   </section>
 
   <!-- ================= TELA: CONTROLE ================= -->
@@ -636,11 +655,10 @@ input{font-family:inherit;font-size:16px}
           </div>
         </section>
 
-        <!-- Painel de requisições. FASE DE TESTE: fica visível sempre, em
-             qualquer aparelho e em qualquer conexão. Antes de publicar para o
-             cliente, voltar a nascer com `hidden` — ver docs/STATUS.md.
-             Os 5 toques no logo escondem e mostram. -->
-        <section class="card" id="painelTec">
+        <!-- Painel de requisições: ferramenta de assistência, não do cliente.
+             Nasce escondido; 5 toques no logo do cabeçalho mostram. A validação
+             de bancada terminou em 10/09/2026 e ele voltou para cá. -->
+        <section class="card" id="painelTec" hidden>
           <h2><svg class="ic"><use href="#i-pulso"/></svg> Requisições</h2>
           <div class="tec-console" id="log"></div>
           <div class="tec-bruto">
@@ -774,7 +792,8 @@ function recadoDeErro(e){
   if(n === 'NotFoundError' && /cancel/i.test(e.message || '')) return null;
   if(n === 'NotFoundError')
     return ['Nenhum aparelho encontrado.',
-      ' Confira se o ar está ligado na chave e se você está perto dele.'];
+      ' Chegue mais perto do equipamento e confira se o Bluetooth do celular está ligado.'
+      + ' O ar não precisa estar ligado.'];
   if(n === 'SecurityError' || n === 'NotAllowedError')
     return ['O navegador bloqueou o Bluetooth.',
       ' Abra o app pelo endereço oficial e autorize o acesso quando ele pedir.'];
@@ -1239,7 +1258,7 @@ async function reconectaSozinho(){
     limpaSessao();
     estado('', 'Desconectado');
     recado('Não achei o seu ar.',
-           ' Confira se ele está ligado na chave e toque em <b style="font-weight:600">Procurar aparelho</b>.');
+           ' Chegue mais perto do equipamento e toque em <b style="font-weight:600">Procurar aparelho</b>.');
     mostraTela(false);
     return false;
   }
@@ -1584,9 +1603,9 @@ document.querySelector('.marca').addEventListener('click', () => {
   vibra(25);
   mostraPainel($('painelTec').hidden);
 });
-/* Nasce visível; só fica escondido se alguém pediu pelo gesto. */
+/* Nasce escondido; só aparece para quem ligou pelo gesto. */
 try{
-  if(localStorage.getItem('stonni_ar_painel') === '0') $('painelTec').hidden = true;
+  if(localStorage.getItem('stonni_ar_painel') === '1') $('painelTec').hidden = false;
 }catch(e){}
 
 $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
