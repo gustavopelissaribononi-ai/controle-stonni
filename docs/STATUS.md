@@ -42,11 +42,15 @@ app fica em `/controle-stonni/`, e caminho absoluto quebraria ícone, manifest e
 worker. Relativo funciona tanto na subpasta quanto na raiz do subdomínio depois. **Não voltar
 para caminho absoluto** sem lembrar disso.
 
-O `.vercelignore` não vale aqui — no Pages sai a pasta inteira, inclusive
-`bancada/testador-ble.html`. Isso é intencional no ambiente de teste: é por ele que se
-confirma o valor de desligar das `CHAVES`, direto do celular, em
-`…github.io/controle-stonni/bancada/testador-ble.html`. Na Vercel (produção) o
-`.vercelignore` mantém tudo isso fora.
+O workflow publica **só o app** (`index.html`, `manifest.json`, `sw.js`, `icons/`). No começo
+subia a pasta inteira, e com ela iam para a internet aberta o próprio `docs/STATUS.md` — que
+descreve o protocolo comando a comando — o `bancada/testador-ble.html` e o README. Um
+concorrente lia tudo sem precisar de equipamento. O `.vercelignore` cuida do mesmo do lado da
+Vercel; no Pages a barreira é o passo `Monta o site` do workflow.
+
+⚠️ Consequência prática: **o testador de bancada não está mais acessível pelo celular.** Para
+usá-lo num teste, servir da máquina local (`preview_start` + encaminhamento de porta por USB)
+ou republicá-lo temporariamente.
 
 ## Publicação (decidido em 10/09/2026)
 
@@ -86,8 +90,10 @@ nameservers `saanvi`/`renan.ns.cloudflare.com`), LiteSpeed com cache de 7 dias.
 ao testador validado na bancada. Não mexer sem o equipamento na mão.
 
 Comandos: `1`=liga(1)/desliga(2) · `2`=modo e funções · `3`=temperatura alvo ·
-`4`=ventilador 1–5 · `10`=display · `28`=luz · `68`=ar externo(1)/interno(0) ·
-`69`=oscilação · `255`=status.
+`4`=ventilador 1–5 · `10`=display (alterna) · `28`=luz · `69`=oscilação · `255`=status.
+
+O comando `68` (ar externo 1 / interno 0) existe no protocolo mas **não é usado**: o
+equipamento testado é sempre interno, e o controle saiu do app.
 
 ⚠️ Atenção ao mapa duplo do **modo**: o valor que se envia não é o código que volta
 no status. Refrigerar envia 1 / volta 1 · Desumidificar envia 7 / volta 2 ·
@@ -113,13 +119,14 @@ Duas telas: conectar → controle. No desktop vira duas colunas a partir de 960 
 - **Estado ativo real** — modo, ventilador, funções e chaves acendem conforme o que a
   placa responde, não conforme o último botão tocado.
 - **Estado otimista** (`marca`/`valor`) — o status chega de 3 em 3 s; sem isso o botão
-  que você acabou de tocar voltaria sozinho. Cada marca cai assim que o aparelho
-  confirma o mesmo valor, ou no prazo (4,5 s; 9 s na temperatura).
+  que você acabou de tocar voltaria sozinho. A marca cai quando **um quadro novo** traz o
+  mesmo valor, ou quando estoura o prazo de 9 s.
 - **Temperatura com envio automático** — 600 ms depois do último toque, sem botão
   "Enviar". No testador, o poll de 3 s sobrescrevia o valor que você estava ajustando.
 - **Reconexão automática** — 3 tentativas com espera crescente. Bluetooth em caminhão
   cai; sem isso o motorista precisaria refazer a busca.
-- **Chaves liga/desliga** de oscilação, luz e display, em vez de botão de mão única.
+- **Chaves liga/desliga** de oscilação e luz, em vez de botão de mão única. O display ficou
+  como botão de alternar, porque o equipamento não informa o estado dele.
 - **PWA instalável de verdade** — ícones locais 192/512/maskable e botão próprio
   "Instalar na tela inicial" (`beforeinstallprompt`). Nenhum outro app do grupo tem esse
   botão; sem ele o motorista teria que achar "Instalar app" no menu do Chrome.
