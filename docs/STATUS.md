@@ -146,6 +146,23 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### iPhone — instala, mas não controla
+
+Os passos de instalação no iPhone são outros (o menu é do Chrome, mas a instalação passa pelo
+Compartilhar do iOS), e estão na tela em `#passosIphone`, escolhidos por `ehIOS`.
+
+⚠️ **Instalar no iPhone não faz o Bluetooth funcionar.** Todo navegador do iOS usa o motor do
+Safari — o Chrome do iPhone inclusive — e o WebKit não implementa Web Bluetooth. O app instala
+e abre; simplesmente não acha o ar. Por isso a tela diz isso antes de a pessoa tentar:
+
+| Situação | O que aparece |
+|---|---|
+| iPhone, no navegador | passos de instalação + *"Dá para instalar, mas o controle não vai conectar no iPhone"* |
+| iPhone, já instalado | sem passos + *"O app está instalado, mas o iPhone não faz Bluetooth por app web"* |
+| Android | passos do Chrome, sem aviso |
+
+Resolver de verdade exige app nativo — é a pendência de iPhone lá embaixo.
+
 ### Modo teste — digite `TESTE` (ou `DEMO`) no campo de código
 
 Abre o controle com um ar-condicionado **simulado**, para conferir a interface sem

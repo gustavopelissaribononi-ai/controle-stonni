@@ -357,13 +357,24 @@ input{font-family:inherit;font-size:16px}
     </button>
 
     <div id="comoInstalar" hidden>
-      <p class="dica" style="margin:0 0 12px">Se o botão não aparecer, instale pelo menu do
-         Chrome:</p>
-      <ol class="passos">
+      <p class="dica" id="comoTitulo" style="margin:0 0 12px">Se o botão não aparecer, instale
+         pelo menu do Chrome:</p>
+
+      <ol class="passos" id="passosAndroid">
         <li>Tocar nos <b>três pontinhos</b> no canto do Chrome</li>
         <li>Escolher <b>Instalar app</b> (ou <em>Adicionar à tela inicial</em>)</li>
         <li>Abrir pelo ícone da Stonni que aparecer na tela inicial</li>
       </ol>
+
+      <ol class="passos" id="passosIphone" hidden>
+        <li>Tocar nos <b>três pontinhos</b> e escolher <b>Compartilhar</b></li>
+        <li>Tocar em <b>Adicionar à Tela de Início</b></li>
+        <li>Não apareceu? Volte nos três pontinhos → <b>Editar ações</b> → toque no
+            <b>+</b> em <em>Adicionar à Tela de Início</em> → <b>Salvar</b>, e repita o
+            passo 2</li>
+        <li>Abrir pelo ícone da Stonni na tela de início</li>
+      </ol>
+
       <p class="dica">Já instalou? É só abrir pelo ícone.</p>
     </div>
 
@@ -1274,13 +1285,33 @@ document.addEventListener('visibilitychange', () => {
 /* ---------- suporte do aparelho ----------
    O aviso vive na tela de instalação: não adianta instalar num aparelho que
    nunca vai conseguir falar Bluetooth. */
+const ehIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 (function(){
-  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  /* No iPhone os passos são outros: o menu é do Chrome, mas a instalação
+     passa pelo Compartilhar do iOS. */
+  if(ehIOS){
+    $('passosAndroid').hidden = true;
+    $('passosIphone').hidden = false;
+    $('comoTitulo').textContent = 'Para instalar no iPhone:';
+  }
+
   if(navigator.bluetooth) return;
-  $('avisoTxt').innerHTML = iOS
-    ? '<b>iPhone e iPad não fazem Bluetooth por app web.</b> É limitação da Apple, não do equipamento. Use um celular <b>Android</b> com Chrome.'
-    : '<b>Este navegador não expõe Bluetooth.</b> Abra no <b>Chrome do Android</b> — é onde o controle funciona.';
+
+  /* Instalado e ainda sem Bluetooth: não adianta repetir o passo a passo,
+     o problema é o aparelho. */
+  if(instalado()){
+    $('comoInstalar').hidden = true;
+    $('btnInstalar').hidden = true;
+    $('avisoTxt').innerHTML = ehIOS
+      ? '<b>O app está instalado, mas o iPhone não faz Bluetooth por app web.</b> É limitação da Apple, não do equipamento — nem pelo Chrome do iPhone, que por dentro é o mesmo Safari. Para controlar o ar, use um celular <b>Android</b>.'
+      : '<b>O app está instalado, mas este aparelho não expõe Bluetooth.</b> Para controlar o ar, use um celular <b>Android</b> com Chrome.';
+  }else{
+    $('avisoTxt').innerHTML = ehIOS
+      ? '<b>Dá para instalar, mas o controle não vai conectar no iPhone.</b> O iOS não libera Bluetooth para app web — nem pelo Chrome, que por dentro é o mesmo Safari. Para usar o ar, precisa de um <b>Android</b>.'
+      : '<b>Este navegador não expõe Bluetooth.</b> Abra no <b>Chrome do Android</b> — é onde o controle funciona.';
+  }
   $('avisoSuporte').hidden = false;
   $('btnConectar').disabled = true;
 })();
