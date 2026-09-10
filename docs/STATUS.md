@@ -146,6 +146,32 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### Bateria do caminhão (proteção de subtensão)
+
+O ar corta sozinho quando a tensão cai, para o caminhão não ficar sem partida. O dado já
+vinha no quadro de status e não estava sendo usado direito:
+
+| Campo | O que é |
+|---|---|
+| `voltage` (f[8]) | tensão atual da bateria, em volts inteiros |
+| `underV` (f[9]) | proteção de subtensão — tratado como **limite de corte** |
+| `fault` 19 (`SPv`) e 37 (`SP`) | falhas de proteção de tensão |
+
+Mostrar só o número não ajuda o motorista: o que importa é **a distância até o corte**. Daí
+o cartão com a tensão grande, uma barra e a marca do limite, mais uma frase que muda de
+estado: em ordem → *bateria baixa, falta pouco para o corte em X V* → *abaixo do limite* →
+*desligado pela proteção*.
+
+⚠️ **`underV` é interpretado, não documentado.** Só vira "limite em volts" quando o valor é
+plausível (entre 9 e 32, e abaixo da tensão atual + 6). Se vier fora disso — pode ser
+sinalizador em vez de limiar, dependendo da placa — o app mostra só a tensão e o sistema,
+**sem inventar um número de corte**. Confirmar com o equipamento.
+
+O sistema (12 V ou 24 V) é deduzido da própria leitura em `sistemaDe()`: abaixo de 18 V é 12.
+
+O rótulo `Núcleo` virou **Temperatura interna** no diagnóstico, e `Tensão` saiu de lá — subiu
+para o cartão de bateria.
+
 ### iPhone — instala, mas não controla
 
 Os passos de instalação no iPhone são outros (o menu é do Chrome, mas a instalação passa pelo
