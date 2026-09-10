@@ -602,12 +602,9 @@ input{font-family:inherit;font-size:16px}
           <button class="linha-op chv" type="button" data-chave="luz" aria-pressed="false">
             <svg class="ic"><use href="#i-luz"/></svg><span>Luz</span><i class="chave"></i>
           </button>
-          <button class="linha-op acao" id="btnDisplay" type="button">
-            <svg class="ic"><use href="#i-tela"/></svg><span>Display</span>
-            <b class="acao-txt">Alternar</b>
+          <button class="linha-op chv" type="button" data-chave="display" aria-pressed="false">
+            <svg class="ic"><use href="#i-tela"/></svg><span>Display</span><i class="chave"></i>
           </button>
-          <p class="dica" style="margin:9px 2px 0">O equipamento não informa se o display
-             está aceso, então este botão só alterna — e leva alguns segundos para responder.</p>
 
         </section>
 
@@ -708,17 +705,19 @@ const ABERTURA_MS = 8000;
 /* Chaves liga/desliga. "lig" veio do testador (validado). "des" segue a convenção
    do comando de energia (1 = liga, 2 = desliga) — é o único ponto do protocolo
    ainda não confirmado na bancada; se o desligar não responder, é aqui que muda. */
-const CHAVES = {
-  swing:   { cmd:69, lig:1, des:2, campo:'swing' },
-  luz:     { cmd:28, lig:1, des:2, campo:'light' }   // confirmado na bancada
-};
+/* ⚠️ A POLARIDADE NÃO É A MESMA EM TODOS OS COMANDOS. Confirmado na bancada:
+     · energia (1) e display (10):  1 = desliga/apaga,  2 = liga/acende
+     · luz (28):                    1 = acende,         2 = apaga
+   O testador original rotulava energia ao contrário, e foi o que fez o app
+   mostrar o estado invertido e o display nunca reagir. Não uniformizar:
+   o firmware é inconsistente mesmo. */
+const ENERGIA = { liga:2, desliga:1 };
 
-/* O display NÃO entra nas CHAVES. Na bancada o comando funciona (a tela do
-   equipamento apaga), mas o bit de display do status ficou em 1 nos 18
-   quadros do teste, com 6 comandos enviados no meio. Ou seja: o aparelho não
-   informa esse estado. Uma chave liga/desliga aqui mentiria — vira botão de
-   alternar, que é o que o testador de bancada sempre foi. */
-const DISPLAY = { cmd:10, val:2 };
+const CHAVES = {
+  swing:   { cmd:69, lig:1, des:2, campo:'swing'   },  // a confirmar
+  luz:     { cmd:28, lig:1, des:2, campo:'light'   },  // confirmado
+  display: { cmd:10, lig:2, des:1, campo:'display' }   // invertido, como a energia
+};
 
 const FALHAS = {0:'OK',1:'Ocioso',2:'EL/E1',3:'EH/E1',4:'E1',5:'EF',6:'E0',7:'E7',19:'SPv',
   22:'E2',23:'E3',24:'E4',25:'E5',26:'E6',27:'E7',28:'E8',29:'E9',30:'H0',31:'H1',32:'Eb',
@@ -1279,7 +1278,7 @@ function aplicaComandoSim(s, q){
   const cmd = q[4], val = q[5];
   const chave = v => (v === 1 ? 1 : 0);   // 1 liga, 2 desliga
   switch(cmd){
-    case 1:  s.power = val === 1 ? 1 : 0; break;
+    case 1:  s.power = val === ENERGIA.liga ? 1 : 0; break;   // 2 liga, 1 desliga
     case 2:
       if(val === 1)      s.mode = 1;      // refrigerar
       else if(val === 7) s.mode = 2;      // desumidificar
@@ -1292,9 +1291,7 @@ function aplicaComandoSim(s, q){
       break;
     case 3:  s.target = val; break;
     case 4:  s.fan = val; break;
-    /* comando 10 chega, mas o equipamento real não reflete no status —
-       o simulador imita isso e também não mexe em s.display */
-    case 10: break;
+    case 10: s.display  = val === 2 ? 1 : 0; break;   // invertido, como a energia
     case 28: s.light    = chave(val); break;
     case 69: s.swing    = chave(val); break;
   }
@@ -1520,7 +1517,7 @@ $('btnLiga').onclick = () => {
   vibra(14);
   marca('power', lig ? 0 : 1);
   pinta();
-  envia(1, lig ? 2 : 1, lig ? 'Desligar' : 'Ligar');
+  envia(1, lig ? ENERGIA.desliga : ENERGIA.liga, lig ? 'Desligar' : 'Ligar');
 };
 
 $('btnMenos').onclick = () => mexeTemp(-1);
@@ -1591,16 +1588,6 @@ document.querySelector('.marca').addEventListener('click', () => {
 try{
   if(localStorage.getItem('stonni_ar_painel') === '0') $('painelTec').hidden = true;
 }catch(e){}
-
-$('btnDisplay').onclick = async () => {
-  vibra(10);
-  const b = $('btnDisplay'), t = b.querySelector('.acao-txt');
-  b.classList.add('enviado');
-  t.textContent = 'Enviando…';
-  const ok = await envia(DISPLAY.cmd, DISPLAY.val, 'Display alternar');
-  t.textContent = ok ? 'Enviado' : 'Não foi';
-  setTimeout(() => { b.classList.remove('enviado'); t.textContent = 'Alternar'; }, 2500);
-};
 
 $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
 

@@ -437,14 +437,9 @@ mudou:
       visível de propósito, para a validação de bancada. Devolver `hidden` ao
       `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
       valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
-- [ ] **Testar Ligar isolado, com o aparelho desligado e sem tocar em mais nada.** Nos dois
-      logs o "Ligar" veio 1 s depois de um "Desligar" e o aparelho ficou desligado. Se agora,
-      com a folga de 300 ms e um toque isolado, ele ligar, era comando colado. Se não ligar,
-      varrer o comando `1`.
-- [ ] **Descobrir o valor que ACENDE o display.** `10 / 2` apaga (confirmado); o `1` não
-      acende. Usar a varredura do painel com o comando `10` e o display apagado. Achado o
-      valor, o Display pode voltar a ser controle de dois estados — mas continua sem
-      confirmação, porque o status não reporta esse bit.
+- [ ] **Confirmar o display com a polaridade nova** (`10 / 1` apaga, `10 / 2` acende). A
+      energia foi confirmada no equipamento; o display segue a mesma convenção por dedução,
+      e ainda não foi visto funcionando.
 - [ ] **Validar o desligar da oscilação (swing).** Luz já foi confirmada na bancada
       (`1C 01`/`1C 02`); o display saiu das chaves por não ser reportado. Falta só o
       swing, e o equipamento onde se testou não tem essa função.
