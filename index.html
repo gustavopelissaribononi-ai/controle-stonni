@@ -249,8 +249,15 @@ input{font-family:inherit;font-size:16px}
 .recado.ok{border-left-color:var(--ciano)}
 .recado.ok .ic{color:var(--ciano)}
 
-/* botão de instalar: só aparece quando o Chrome oferece */
-.instalar{margin-top:12px}
+/* passo a passo de instalação manual, quando o Chrome não oferece o botão */
+.passos{list-style:none;counter-reset:p;margin:0 0 4px}
+.passos li{counter-increment:p;position:relative;padding:0 0 0 38px;margin-bottom:12px;
+  color:var(--meio);font-size:14.5px;line-height:1.45}
+.passos li::before{content:counter(p);position:absolute;left:0;top:-1px;
+  width:26px;height:26px;border-radius:50%;background:var(--ciano-tinta);color:var(--ciano);
+  font-size:13px;font-weight:700;display:grid;place-items:center}
+.passos b{color:var(--texto);font-weight:600}
+.passos em{font-style:normal;color:var(--texto)}
 
 .rodape{text-align:center;color:var(--fraco);font-size:12px;margin-top:26px;line-height:1.7}
 .rodape button{color:var(--meio);font-weight:600;text-decoration:underline;
@@ -312,8 +319,40 @@ input{font-family:inherit;font-size:16px}
     <div id="recadoTxt"></div>
   </div>
 
-  <!-- ================= TELA: CONECTAR ================= -->
-  <section id="telaConectar">
+  <!-- ================= TELA: INSTALAR =================
+       É o que o site mostra. O controle em si não roda aqui: quem abre
+       pelo navegador só vê esta tela. -->
+  <section id="telaInstalar" hidden>
+    <div class="hero">
+      <div class="selo">Aplicativo Stonni</div>
+      <h1>Instale o controle<em>e use pelo ícone, sem navegador.</em></h1>
+      <p>Ele fala com o ar por Bluetooth e funciona sem internet — por isso roda
+         instalado no celular, e não por esta página.</p>
+    </div>
+
+    <button class="btn cheio largo" id="btnInstalar" type="button" hidden>
+      <svg class="ic"><use href="#i-baixar"/></svg> Instalar no celular
+    </button>
+
+    <div id="comoInstalar" hidden>
+      <p class="dica" style="margin:0 0 12px">Se o botão não aparecer, instale pelo menu do
+         Chrome:</p>
+      <ol class="passos">
+        <li>Tocar nos <b>três pontinhos</b> no canto do Chrome</li>
+        <li>Escolher <b>Instalar app</b> (ou <em>Adicionar à tela inicial</em>)</li>
+        <li>Abrir pelo ícone da Stonni que aparecer na tela inicial</li>
+      </ol>
+      <p class="dica">Já instalou? É só abrir pelo ícone.</p>
+    </div>
+
+    <div class="aviso" id="avisoSuporte" hidden>
+      <svg class="ic"><use href="#i-aviso"/></svg>
+      <div id="avisoTxt"></div>
+    </div>
+  </section>
+
+  <!-- ================= TELA: CONECTAR (só no app instalado) ================= -->
+  <section id="telaConectar" hidden>
     <div class="hero">
       <div class="selo">Controle por Bluetooth</div>
       <h1>Seu ar<em>na palma da mão, dentro da cabine.</em></h1>
@@ -332,15 +371,6 @@ input{font-family:inherit;font-size:16px}
     <button class="btn cheio largo" id="btnConectar" type="button">
       <svg class="ic"><use href="#i-bt"/></svg> Procurar aparelho
     </button>
-
-    <button class="btn largo instalar" id="btnInstalar" type="button" hidden>
-      <svg class="ic"><use href="#i-baixar"/></svg> Instalar na tela inicial
-    </button>
-
-    <div class="aviso" id="avisoSuporte" hidden>
-      <svg class="ic"><use href="#i-aviso"/></svg>
-      <div id="avisoTxt"></div>
-    </div>
   </section>
 
   <!-- ================= TELA: CONTROLE ================= -->
@@ -707,9 +737,34 @@ function estado(cls, txt){
   $('chip').className = 'chip' + (cls ? ' ' + cls : '');
   $('chipTxt').textContent = txt;
 }
+/* ==========================================================================
+   TRÊS ESTADOS, NÃO DOIS
+   Pelo navegador o cliente só vê a tela de instalação — o controle não roda
+   ali. Instalado (o Chrome passa a casar com display-mode: standalone), aí
+   sim aparece conectar → controle.
+   ========================================================================== */
+const MODOS_APP = ['standalone', 'fullscreen', 'minimal-ui', 'window-controls-overlay'];
+const instalado = () =>
+  MODOS_APP.some(m => matchMedia('(display-mode: ' + m + ')').matches)
+  || navigator.standalone === true;
+
 function mostraTela(conectado){
+  $('telaInstalar').hidden = true;
   $('telaConectar').hidden = conectado;
   $('telaControle').hidden = !conectado;
+}
+
+/* Decide o que mostrar ao abrir. Só é chamada uma vez, na carga. */
+function roteia(){
+  if(instalado()){
+    $('chip').hidden = false;
+    mostraTela(false);
+    return;
+  }
+  $('chip').hidden = true;
+  $('telaInstalar').hidden = false;
+  $('telaConectar').hidden = true;
+  $('telaControle').hidden = true;
 }
 
 async function conectar(){
@@ -896,16 +951,17 @@ document.addEventListener('visibilitychange', () => {
   if(!document.hidden && carTx) envia(255, 0);
 });
 
-/* ---------- suporte do navegador ---------- */
+/* ---------- suporte do aparelho ----------
+   O aviso vive na tela de instalação: não adianta instalar num aparelho que
+   nunca vai conseguir falar Bluetooth. */
 (function(){
   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if(navigator.bluetooth) return;
-  const a = $('avisoSuporte');
   $('avisoTxt').innerHTML = iOS
-    ? '<b>iPhone e iPad não abrem Bluetooth pelo navegador.</b> É limitação da Apple, não do equipamento. Use um Android com Chrome — ou o app nativo, quando estiver publicado.'
-    : '<b>Este navegador não expõe Bluetooth.</b> Abra no Chrome do Android, ou no Chrome/Edge do computador, sempre por <b>https</b> ou <b>localhost</b>.';
-  a.hidden = false;
+    ? '<b>iPhone e iPad não fazem Bluetooth por app web.</b> É limitação da Apple, não do equipamento. Use um celular <b>Android</b> com Chrome.'
+    : '<b>Este navegador não expõe Bluetooth.</b> Abra no <b>Chrome do Android</b> — é onde o controle funciona.';
+  $('avisoSuporte').hidden = false;
   $('btnConectar').disabled = true;
 })();
 
@@ -923,29 +979,39 @@ try{
    motorista teria que achar "Instalar app" no menu de três pontinhos.
    ========================================================================== */
 let convite = null;
-const jaInstalado = () =>
-  matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();                 // impede o banner padrão; o botão é nosso
-  if(jaInstalado()) return;
+  if(instalado()) return;
   convite = e;
   $('btnInstalar').hidden = false;
+  $('comoInstalar').hidden = true;    // tem botão, não precisa do passo a passo
 });
 
+/* O evento não vem em todo navegador. Se em 1,5 s não veio e a pessoa está no
+   navegador, mostra o caminho manual — senão ela fica olhando para uma tela
+   que pede para instalar sem dizer como. */
+setTimeout(() => {
+  if(!instalado() && !convite) $('comoInstalar').hidden = false;
+}, 1500);
+
 $('btnInstalar').onclick = async () => {
-  if(!convite) return;
+  if(!convite){ $('comoInstalar').hidden = false; return; }
   $('btnInstalar').hidden = true;
   convite.prompt();
   const r = await convite.userChoice.catch(() => null);
   convite = null;
   if(r && r.outcome === 'accepted')
-    recado('App instalado.', ' Abra pelo ícone da Stonni na tela inicial.', 'ok');
+    recado('Pronto, está instalado.', ' Feche esta página e abra pelo ícone da Stonni.', 'ok');
+  else
+    $('comoInstalar').hidden = false;
 };
 
 window.addEventListener('appinstalled', () => {
   convite = null;
   $('btnInstalar').hidden = true;
+  $('comoInstalar').hidden = true;
+  recado('Pronto, está instalado.', ' Feche esta página e abra pelo ícone da Stonni.', 'ok');
 });
 
 /* PWA */
@@ -954,6 +1020,9 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
+
+/* decide a tela inicial: instalação, ou o controle */
+roteia();
 </script>
 </body>
 </html>
