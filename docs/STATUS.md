@@ -164,11 +164,24 @@ turbo e luz nos bits previstos. Os offsets de `leStatus` **saem da lista de pend
 `light` = 1) e `1C 02` apagou (bit = 0), confirmado em 0,2 s. Swing continua sem teste — o
 equipamento da bancada não tem.
 
-**O display não é reportado.** O bit `display` (f[2] bit 0) ficou **em 1 nos 18 quadros**,
-com 6 comandos `0A 02` enviados no meio. O comando funciona (a tela do equipamento apaga),
-mas o status não devolve esse estado. Por isso o Display **deixou de ser chave liga/desliga e
-virou botão de alternar** — uma chave ali mentiria, e era o que gerava o "sem confirmação de
-chv:display depois de 10 s" repetido no log.
+**O display não é reportado, e só sabemos apagar.** O bit `display` (f[2] bit 0) ficou **em 1
+nos 18 quadros**, com 5 comandos enviados no meio — e todos foram `0A 02`, nunca `0A 01`.
+Isso acontece porque o app decidia ligar/desligar a partir desse bit travado em 1: concluía
+sempre "está aceso" e mandava sempre apagar.
+
+Cruzando com o relato de bancada — *apagou uma vez e nunca mais acendeu*, e neste teste
+*nenhuma vez apagou* — a leitura é:
+
+- `10 / 2` **apaga**, e funciona;
+- neste teste o display **já estava apagado** desde antes, então mandar apagar de novo não
+  mudou nada visível;
+- **o valor que acende é desconhecido.** O `1` que eu havia suposto não acende.
+
+Por isso o Display deixou de ser chave (mentiria, e gerava o "sem confirmação de chv:display
+depois de 10 s" repetido no log) e virou botão que manda `10 / 2`. ⚠️ **Hoje ele só apaga.**
+Para achar o valor que acende existe a **varredura** no painel: com o display apagado, põe
+`10` no campo de comando e toca em *Varrer 0–9* — ela manda 0..9 de 2,5 em 2,5 s e escreve
+cada um no log; basta olhar o equipamento e ver em qual valor ele reage.
 
 **`underV` é décimo de volt.** Veio **205**, constante em todo quadro — não é volt inteiro
 (205 V não existe aqui) nem sinalizador: é **20,5 V**, corte plausível para 24 V. A leitura
@@ -369,6 +382,10 @@ mudou:
       visível de propósito, para a validação de bancada. Devolver `hidden` ao
       `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
       valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
+- [ ] **Descobrir o valor que ACENDE o display.** `10 / 2` apaga (confirmado); o `1` não
+      acende. Usar a varredura do painel com o comando `10` e o display apagado. Achado o
+      valor, o Display pode voltar a ser controle de dois estados — mas continua sem
+      confirmação, porque o status não reporta esse bit.
 - [ ] **Validar o desligar da oscilação (swing).** Luz já foi confirmada na bancada
       (`1C 01`/`1C 02`); o display saiu das chaves por não ser reportado. Falta só o
       swing, e o equipamento onde se testou não tem essa função.

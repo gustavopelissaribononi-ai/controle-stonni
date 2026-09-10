@@ -284,6 +284,8 @@ input{font-family:inherit;font-size:16px}
   font-family:ui-monospace,Consolas,monospace}
 .tec-bruto input:focus{outline:none;border-color:var(--ciano)}
 .tec-bruto .btn{padding:9px 14px;min-height:40px;font-size:13px;border-radius:var(--r-p)}
+.tec-bruto .btn.act{border-color:var(--alerta);color:var(--alerta)}
+.tec-bruto .btn.act.rodando{background:var(--alerta);color:#2A1C02;font-weight:700}
 .tec-nota{color:var(--fraco);font-size:12px;line-height:1.6;margin-top:11px}
 
 /* ---------- bateria do caminhão ----------
@@ -613,9 +615,14 @@ input{font-family:inherit;font-size:16px}
             <label for="bVal">Valor</label>
             <input type="number" id="bVal" min="0" max="255" value="0" inputmode="numeric">
             <button class="btn" id="btnBruto" type="button">Enviar</button>
+            <button class="btn act" id="btnVarrer" type="button">Varrer 0–9</button>
             <button class="btn" id="btnCopiar" type="button">Copiar</button>
             <button class="btn" id="btnLimpar" type="button">Limpar</button>
           </div>
+          <p class="tec-nota"><b style="color:var(--texto)">Varrer 0–9</b> manda o mesmo
+             comando com os valores 0 a 9, um a cada 2,5 s, e escreve cada um no log. Serve
+             para descobrir qual valor faz o equipamento reagir — olhe o aparelho e anote em
+             qual valor ele mudou. Toque de novo para parar.</p>
           <p class="tec-nota">Âmbar no botão = enviado, aguardando o aparelho. As linhas
              <b style="color:var(--alerta)">confirmado…</b> mostram quanto tempo cada comando
              levou para o equipamento responder. Painel de teste — 5 toques no logo escondem
@@ -1548,6 +1555,29 @@ $('btnDisplay').onclick = async () => {
 };
 
 $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
+
+/* ---------- varredura de valores ----------
+   Ferramenta de bancada: manda o mesmo comando com 0..9 e escreve cada um no
+   log, para descobrir qual valor o equipamento aceita. Foi o que faltou para
+   o display: sabemos que 10/2 apaga, não sabemos o que acende. */
+let varrendo = false;
+$('btnVarrer').onclick = async () => {
+  const b = $('btnVarrer');
+  if(varrendo){ varrendo = false; return; }          // segundo toque interrompe
+  const cmd = +$('bCmd').value;
+  varrendo = true;
+  b.classList.add('rodando');
+  b.textContent = 'Parar';
+  log('varredura do comando ' + cmd + ': valores 0 a 9, um a cada 2,5 s', 'marco');
+  for(let v = 0; v <= 9 && varrendo; v++){
+    await envia(cmd, v, '↯ varredura ' + cmd + '/' + v);
+    await new Promise(r => setTimeout(r, 2500));
+  }
+  log(varrendo ? 'varredura terminada' : 'varredura interrompida', 'marco');
+  varrendo = false;
+  b.classList.remove('rodando');
+  b.textContent = 'Varrer 0–9';
+};
 $('btnLimpar').onclick = () => { $('log').innerHTML = ''; };
 $('btnCopiar').onclick = async () => {
   try{

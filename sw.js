@@ -10,7 +10,7 @@
 //
 //  ⚠️ Ao subir um deploy, BUMPAR VERSAO para invalidar o cache.
 // ============================================================
-const VERSAO = 'stonni-ar-v13-20260910';
+const VERSAO = 'stonni-ar-v14-20260910';
 const CASCA = [
   './',
   './index.html',
