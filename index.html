@@ -246,6 +246,41 @@ input{font-family:inherit;font-size:16px}
 .seg button .ic{width:18px;height:18px}
 .seg button[aria-pressed="true"]{background:var(--ciano);color:var(--sobre-ciano);font-weight:700}
 
+/* ---------- esperando o aparelho confirmar ----------
+   Âmbar = comando enviado, aparelho ainda não respondeu. Ciano = confirmado
+   pelo status. Sem isso o botão mente: fica com cara de pronto enquanto a
+   placa ainda nem processou — foi o que apareceu no Display, que responde
+   mais devagar que os outros. */
+.op.aguardando,.linha-op.aguardando{border-color:rgba(255,176,32,.55)}
+.op.aguardando[aria-pressed="true"]{background:var(--alerta);border-color:var(--alerta);
+  box-shadow:0 0 16px rgba(255,176,32,.22)}
+.linha-op.aguardando .ic{color:var(--alerta)}
+.linha-op.aguardando[aria-pressed="true"] .chave{background:var(--alerta);
+  border-color:var(--alerta)}
+.linha-op.aguardando[aria-pressed="true"] .chave::after{background:#2A1C02}
+.liga.aguardando[aria-pressed="true"]{background:var(--alerta);border-color:var(--alerta);
+  box-shadow:0 0 20px rgba(255,176,32,.3)}
+.liga.aguardando[aria-pressed="false"]{border-color:rgba(255,176,32,.55)}
+
+/* ---------- painel de requisições (aparece só em teste) ---------- */
+.tec-console{background:var(--afundado);border:1px solid var(--linha);border-radius:var(--r-p);
+  height:230px;overflow-y:auto;padding:11px 12px;
+  font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:11.5px;line-height:1.75}
+.tec-console div{white-space:pre-wrap;word-break:break-all}
+.tec-console .tx{color:var(--ciano)}
+.tec-console .rx{color:var(--ok)}
+.tec-console .sis{color:var(--fraco)}
+.tec-console .err{color:var(--falha)}
+.tec-console .marco{color:var(--alerta)}
+.tec-bruto{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:11px}
+.tec-bruto label{color:var(--fraco);font-size:12px;font-weight:600}
+.tec-bruto input{width:76px;background:var(--sup2);border:1px solid var(--linha);
+  border-radius:var(--r-p);color:var(--texto);padding:9px 10px;font-size:14px;
+  font-family:ui-monospace,Consolas,monospace}
+.tec-bruto input:focus{outline:none;border-color:var(--ciano)}
+.tec-bruto .btn{padding:9px 14px;min-height:40px;font-size:13px;border-radius:var(--r-p)}
+.tec-nota{color:var(--fraco);font-size:12px;line-height:1.6;margin-top:11px}
+
 /* ---------- bateria do caminhão ----------
    O ar corta sozinho quando a tensão cai, para não deixar o caminhão sem
    partida. Mostrar só o número não ajuda: o que importa é a distância até o
@@ -338,8 +373,6 @@ input{font-family:inherit;font-size:16px}
   <symbol id="i-swing" viewBox="0 0 24 24"><path d="M4 5.5h16"/><path d="M12 9.5v9"/><path d="M8.4 15 12 18.6 15.6 15"/></symbol>
   <symbol id="i-luz" viewBox="0 0 24 24"><path d="M9.6 18.2h4.8M10.2 21h3.6"/><path d="M12 3a6 6 0 0 1 3.6 10.8c-.6.5-.9 1.1-1 1.8H9.4c-.1-.7-.4-1.3-1-1.8A6 6 0 0 1 12 3z"/></symbol>
   <symbol id="i-tela" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12.5" rx="2.2"/><path d="M8.6 21h6.8M12 17v4"/></symbol>
-  <symbol id="i-recirc" viewBox="0 0 24 24"><path d="M4.5 9.5h12a3.5 3.5 0 0 1 0 7h-4.5"/><path d="M7 7 4.5 9.5 7 12"/><path d="M14.5 14 12 16.5l2.5 2.5"/></symbol>
-  <symbol id="i-externo" viewBox="0 0 24 24"><path d="M20 3.5v17"/><path d="M3.5 12h12.5"/><path d="M12 7.8 16.2 12 12 16.2"/></symbol>
   <symbol id="i-bt" viewBox="0 0 24 24"><path d="M7 7.6 17 16.4 12 21V3l5 4.6L7 16.4"/></symbol>
   <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5.5 12h13"/></symbol>
   <symbol id="i-mais" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
@@ -529,13 +562,6 @@ input{font-family:inherit;font-size:16px}
             <svg class="ic"><use href="#i-tela"/></svg><span>Display</span><i class="chave"></i>
           </button>
 
-          <h2 style="margin:18px 0 10px"><svg class="ic"><use href="#i-recirc"/></svg> Entrada de ar</h2>
-          <div class="seg" id="grupoAr">
-            <button type="button" data-val="0" aria-pressed="false">
-              <svg class="ic"><use href="#i-recirc"/></svg> Interno</button>
-            <button type="button" data-val="1" aria-pressed="false">
-              <svg class="ic"><use href="#i-externo"/></svg> Externo</button>
-          </div>
         </section>
 
         <section class="card">
@@ -564,6 +590,25 @@ input{font-family:inherit;font-size:16px}
             <div><span>Timer</span><strong id="dTimer">--</strong></div>
             <div><span>Sistema</span><strong id="dSistema">--</strong></div>
           </div>
+        </section>
+
+        <!-- Painel de requisições. Escondido do cliente; liga com 5 toques no
+             logo do cabeçalho. Serve para achar por que um comando demora. -->
+        <section class="card" id="painelTec" hidden>
+          <h2><svg class="ic"><use href="#i-pulso"/></svg> Requisições</h2>
+          <div class="tec-console" id="log"></div>
+          <div class="tec-bruto">
+            <label for="bCmd">Cmd</label>
+            <input type="number" id="bCmd" min="0" max="255" value="255" inputmode="numeric">
+            <label for="bVal">Valor</label>
+            <input type="number" id="bVal" min="0" max="255" value="0" inputmode="numeric">
+            <button class="btn" id="btnBruto" type="button">Enviar</button>
+            <button class="btn" id="btnCopiar" type="button">Copiar</button>
+            <button class="btn" id="btnLimpar" type="button">Limpar</button>
+          </div>
+          <p class="tec-nota">Âmbar no botão = enviado, aguardando o aparelho. As linhas
+             <b style="color:var(--alerta)">confirmado…</b> mostram quanto tempo cada comando
+             levou para o equipamento responder. 5 toques no logo escondem este painel.</p>
         </section>
 
       </div>
@@ -635,6 +680,18 @@ function log(txt, cls){
   const linha = new Date().toTimeString().slice(0,8) + '  ' + txt;
   if(cls === 'err') console.error('[stonni]', linha);
   else console.log('[stonni]', linha);
+
+  /* Além do console, alimenta o painel de requisições. Escreve sempre, mesmo
+     com o painel escondido — assim, ao ligar no meio de um teste, o histórico
+     já está lá. */
+  const cx = document.getElementById('log');
+  if(!cx) return;
+  const el = document.createElement('div');
+  el.className = cls || 'sis';
+  el.textContent = linha;
+  cx.appendChild(el);
+  while(cx.childElementCount > 400) cx.removeChild(cx.firstElementChild);
+  cx.scrollTop = cx.scrollHeight;
 }
 
 /* Mensagem visível, em português comum. `tipo` 'ok' pinta de ciano em vez de
@@ -759,14 +816,27 @@ function confere(s){
    ========================================================================== */
 const otim = {};
 function marca(chave, v, ms){
-  otim[chave] = { v, ate: Date.now() + (ms || 4500) };
+  otim[chave] = { v, ate: Date.now() + (ms || 9000), t: Date.now() };
 }
 function valor(chave, real){
   const o = otim[chave];
   if(!o) return real;
-  if(o.v === real || Date.now() > o.ate){ delete otim[chave]; return real; }
+  const seg = ((Date.now() - o.t) / 1000).toFixed(1);
+  if(o.v === real){
+    log('confirmado ' + chave + ' em ' + seg + ' s', 'marco');
+    delete otim[chave];
+    return real;
+  }
+  if(Date.now() > o.ate){
+    log('sem confirmação de ' + chave + ' depois de ' + seg + ' s', 'err');
+    delete otim[chave];
+    return real;
+  }
   return o.v;
 }
+/* Um controle está aguardando enquanto a marca dele não foi resolvida.
+   Chamar SEMPRE depois de valor(), que é quem resolve. */
+const aguardando = chave => !!otim[chave];
 
 /* ---------- pintura da tela ---------- */
 function pinta(){
@@ -776,7 +846,6 @@ function pinta(){
   const alvo = valor('alvo',  s ? s.target : 22);
   const modo = valor('modo',  s ? s.mode : 0);
   const vent = valor('vent',  s ? s.fan : 0);
-  const ar   = valor('ar',    s ? s.windSide : 0);
 
   $('alvoUn').textContent = un;
   $('alvoNum').textContent = s ? alvo : '--';
@@ -784,29 +853,36 @@ function pinta(){
   $('estadoTxt').textContent = lig ? 'Ligado' : 'Desligado';
   $('estadoTxt').classList.toggle('on', !!lig);
   $('btnLiga').setAttribute('aria-pressed', lig ? 'true' : 'false');
+  $('btnLiga').classList.toggle('aguardando', aguardando('power'));
 
   const pct = Math.max(0, Math.min(100, ((alvo - TEMP_MIN) / (TEMP_MAX - TEMP_MIN)) * 100));
   $('faixaTemp').style.width = (s ? pct : 0) + '%';
 
   $('ambiente').innerHTML = s
-    ? 'Ambiente <b>' + s.inlet + un + '</b> · ar ' + (ar ? 'externo' : 'interno')
+    ? 'Ambiente <b>' + s.inlet + un + '</b>'
     : 'Lendo o equipamento…';
 
-  document.querySelectorAll('.modo').forEach(b =>
-    b.setAttribute('aria-pressed', (+b.dataset.est === modo) ? 'true' : 'false'));
-  document.querySelectorAll('.vent').forEach(b =>
-    b.setAttribute('aria-pressed', (+b.dataset.val === vent) ? 'true' : 'false'));
+  document.querySelectorAll('.modo').forEach(b => {
+    b.setAttribute('aria-pressed', (+b.dataset.est === modo) ? 'true' : 'false');
+    b.classList.toggle('aguardando', aguardando('modo') && +b.dataset.est === modo);
+  });
+  document.querySelectorAll('.vent').forEach(b => {
+    b.setAttribute('aria-pressed', (+b.dataset.val === vent) ? 'true' : 'false');
+    b.classList.toggle('aguardando', aguardando('vent') && +b.dataset.val === vent);
+  });
   document.querySelectorAll('.fn').forEach(b => {
-    const on = s ? valor('fn:' + b.dataset.est, s[b.dataset.est]) : 0;
+    const k = 'fn:' + b.dataset.est;
+    const on = s ? valor(k, s[b.dataset.est]) : 0;
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.classList.toggle('aguardando', aguardando(k));
   });
   document.querySelectorAll('.chv').forEach(b => {
     const cfg = CHAVES[b.dataset.chave];
-    const on = s ? valor('chv:' + b.dataset.chave, s[cfg.campo]) : 0;
+    const k = 'chv:' + b.dataset.chave;
+    const on = s ? valor(k, s[cfg.campo]) : 0;
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.classList.toggle('aguardando', aguardando(k));
   });
-  document.querySelectorAll('#grupoAr button').forEach(b =>
-    b.setAttribute('aria-pressed', (+b.dataset.val === ar) ? 'true' : 'false'));
 
   if(!s) return;
   const f = FALHAS[s.fault] !== undefined ? FALHAS[s.fault] : ('cód ' + s.fault);
@@ -1117,7 +1193,6 @@ function aplicaComandoSim(s, q){
     case 4:  s.fan = val; break;
     case 10: s.display  = chave(val); break;
     case 28: s.light    = chave(val); break;
-    case 68: s.windSide = val ? 1 : 0; break;
     case 69: s.swing    = chave(val); break;
   }
 }
@@ -1387,18 +1462,40 @@ document.querySelectorAll('.chv').forEach(b => {
   };
 });
 
-document.querySelectorAll('#grupoAr button').forEach(b => {
-  b.onclick = () => {
-    vibra(10);
-    marca('ar', +b.dataset.val);
-    pinta();
-    envia(68, +b.dataset.val, +b.dataset.val ? 'Ar externo' : 'Ar interno');
-  };
-});
-
 $('nomeAp').addEventListener('keydown', e => { if(e.key === 'Enter') conectar(); });
 $('btnQR').onclick = abreLeitor;
 $('btnFechaLeitor').onclick = fechaLeitor;
+
+/* ---------- painel de requisições ----------
+   Fica escondido do cliente e liga com 5 toques no logo. Gesto em vez de
+   botão porque o app é público: quem não souber, não acha. */
+function mostraPainel(ligado){
+  $('painelTec').hidden = !ligado;
+  try{ localStorage.setItem('stonni_ar_painel', ligado ? '1' : '0'); }catch(e){}
+}
+let toquesLogo = 0, ultimoToqueLogo = 0;
+document.querySelector('.marca').addEventListener('click', () => {
+  const agora = Date.now();
+  if(agora - ultimoToqueLogo > 1200) toquesLogo = 0;   // recomeça se demorar
+  ultimoToqueLogo = agora;
+  if(++toquesLogo < 5) return;
+  toquesLogo = 0;
+  vibra(25);
+  mostraPainel($('painelTec').hidden);
+});
+try{
+  if(localStorage.getItem('stonni_ar_painel') === '1') $('painelTec').hidden = false;
+}catch(e){}
+
+$('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto');
+$('btnLimpar').onclick = () => { $('log').innerHTML = ''; };
+$('btnCopiar').onclick = async () => {
+  try{
+    await navigator.clipboard.writeText($('log').innerText);
+    $('btnCopiar').textContent = 'Copiado';
+    setTimeout(() => { $('btnCopiar').textContent = 'Copiar'; }, 1600);
+  }catch(e){ log('não consegui copiar: ' + e.message, 'err'); }
+};
 
 document.addEventListener('visibilitychange', () => {
   if(!document.hidden && carTx) envia(255, 0);

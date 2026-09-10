@@ -146,6 +146,41 @@ O passo a passo numerado aparece quando o `beforeinstallprompt` não vem em 1,5 
 pessoa fica olhando para uma tela que manda instalar sem dizer como. O aviso de aparelho sem
 Bluetooth migrou para essa tela: não adianta instalar num iPhone.
 
+### Retorno da bancada (10/09/2026) — o que o equipamento mostrou
+
+Primeiro teste com o ar de verdade:
+
+- **Entrada de ar não existe neste equipamento** — é sempre interno. O controle saiu do app
+  (e o comando 68 saiu do simulador). O campo `windSide` continua sendo lido do quadro, só não
+  é mais mostrado nem comandado.
+- **Display funciona, mas demora** — precisa esperar. Não é comando errado; é resposta lenta.
+  A hipótese de que o valor 2 estava errado **caiu**: o comando chega, a placa é que leva
+  tempo.
+- **Oscilação e luz não puderam ser testadas** — o equipamento da bancada não tem essas
+  funções. A convenção de desligar (valor 2) continua **não confirmada** para elas.
+
+Isso gerou duas mudanças:
+
+**Estado de espera nos controles.** Antes o botão mentia: pintava de ciano na hora, com cara
+de pronto, enquanto a placa ainda nem tinha processado. Agora **âmbar = enviado, aguardando o
+aparelho; ciano = confirmado pelo status**. O estado sai de graça do `otim`: enquanto a marca
+não foi resolvida, o controle está aguardando — daí o helper `aguardando()`, que precisa ser
+chamado **depois** de `valor()`, que é quem resolve a marca. O prazo da marca subiu de 4,5 s
+para 9 s, senão um comando lento expira antes de confirmar.
+
+**Painel de requisições.** `#painelTec`, escondido do cliente, ligado com **5 toques no logo**
+do cabeçalho (gesto em vez de botão porque o app é público). Mostra TX/RX e, o que interessa
+para este problema, **quanto tempo cada comando levou até o equipamento confirmar**:
+
+```
+TX  5A 5A 06 01 0A 02 C7 0D 0A   Display off
+RX  5A 5A 96 0A 1B 0D 08 02 19 15 ...
+confirmado chv:display em 1.0 s
+```
+
+O `log()` escreve no painel mesmo com ele escondido, então dá para ligar no meio de um teste e
+o histórico já está lá. A preferência fica no `localStorage`.
+
 ### Bateria do caminhão (proteção de subtensão)
 
 O ar corta sozinho quando a tensão cai, para o caminhão não ficar sem partida. O dado já
