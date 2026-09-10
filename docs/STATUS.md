@@ -20,8 +20,9 @@ instalável na tela inicial do Android. O testador de bancada
 | Repositório | `github.com/gustavopelissaribononi-ai/controle-stonni` (branch `main`) |
 | Servidor local | `preview_start` → `app-stonni-ar` (porta **5286**) |
 | Script do servidor | `.claude\run-app-stonni.cmd` na pasta de docs |
+| **Teste (https real)** | `https://gustavopelissaribononi-ai.github.io/controle-stonni/` — GitHub Pages |
 | Endereço planejado | `https://controle.stonni.com.br` |
-| Deploy | ainda **não publicado** — ver Publicação |
+| Deploy de produção | ainda **não publicado** — ver Publicação |
 
 ⚠️ **Este é o único app do grupo fora da conta `leobononi2906`.** Os outros 16 repositórios
 ficam lá. Consequências práticas: a Vercel precisa ter esta conta conectada para importar, e
@@ -30,6 +31,22 @@ repositório em Settings → Transfer ownership, e aqui basta um `git remote set
 
 Arquivo único `index.html` (~43 KB) + `manifest.json` + `sw.js` + `vercel.json` + `icons/`.
 Sem build, sem dependência de pacote. Segue o padrão dos outros apps do grupo.
+
+## Ambiente de teste — GitHub Pages
+
+`.github/workflows/pages.yml` publica a cada push na `main`. Serve para **instalar no Android
+e validar o Bluetooth num https de verdade**, sem depender da Vercel nem de DNS.
+
+Por causa dele os caminhos do app são **relativos** (`./icons/…`, `scope: "./"`): no Pages o
+app fica em `/controle-stonni/`, e caminho absoluto quebraria ícone, manifest e service
+worker. Relativo funciona tanto na subpasta quanto na raiz do subdomínio depois. **Não voltar
+para caminho absoluto** sem lembrar disso.
+
+O `.vercelignore` não vale aqui — no Pages sai a pasta inteira, inclusive
+`bancada/testador-ble.html`. Isso é intencional no ambiente de teste: é por ele que se
+confirma o valor de desligar das `CHAVES`, direto do celular, em
+`…github.io/controle-stonni/bancada/testador-ble.html`. Na Vercel (produção) o
+`.vercelignore` mantém tudo isso fora.
 
 ## Publicação (decidido em 10/09/2026)
 
