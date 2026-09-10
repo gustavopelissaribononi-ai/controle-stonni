@@ -760,6 +760,17 @@ function mostraTela(conectado){
 
 /* Decide o que mostrar ao abrir. Só é chamada uma vez, na carga. */
 function roteia(){
+  /* Sem Bluetooth o app não tem o que fazer — fica na tela explicativa, mesmo
+     instalado. O iPhone cai aqui: o Safari deixa "Adicionar à tela inicial",
+     então instalado() diz sim, mas Bluetooth não existe. Sem esta guarda o
+     cliente veria a tela de conexão com um botão morto e nenhuma explicação. */
+  if(!navigator.bluetooth){
+    $('chip').hidden = true;
+    $('telaInstalar').hidden = false;
+    $('telaConectar').hidden = true;
+    $('telaControle').hidden = true;
+    return;
+  }
   if(instalado()){
     $('chip').hidden = false;
     mostraTela(false);
