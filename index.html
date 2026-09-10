@@ -250,24 +250,31 @@ input{font-family:inherit;font-size:16px}
    O ar corta sozinho quando a tensão cai, para não deixar o caminhão sem
    partida. Mostrar só o número não ajuda: o que importa é a distância até o
    corte. Daí a barra com a marca do limite. */
-.bat{display:flex;align-items:center;gap:16px}
-.bat-num{display:flex;align-items:baseline;gap:4px;flex:none}
+.bat-topo{display:flex;align-items:baseline;gap:11px;margin-bottom:15px}
+.bat-num{display:flex;align-items:baseline;gap:3px;flex:none}
 .bat-num strong{font-family:'Roboto',sans-serif;font-weight:900;font-size:40px;
   line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--ok)}
 .bat-num span{font-size:16px;font-weight:600;color:var(--meio)}
-.bat-dir{flex:1;min-width:0}
-.bat-barra{position:relative;height:8px;border-radius:8px;background:var(--afundado);
-  margin-bottom:10px}
-.bat-barra .preenche{position:absolute;left:0;top:0;bottom:0;width:0;
-  border-radius:8px;background:var(--ok);transition:width .4s ease}
-.bat-barra .marca{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:2px;
-  background:var(--meio)}
-.bat-txt{color:var(--meio);font-size:13px;line-height:1.45}
-.bat-txt b{display:block;color:var(--texto);font-weight:600;margin-bottom:1px}
-.bat.atencao .bat-num strong{color:var(--alerta)}
-.bat.atencao .bat-barra .preenche{background:var(--alerta)}
-.bat.critico .bat-num strong{color:var(--falha)}
-.bat.critico .bat-barra .preenche{background:var(--falha)}
+.bat-estado{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:var(--ok);
+  line-height:1.25}
+
+.bat-barra{position:relative;height:10px;border-radius:10px;background:var(--afundado)}
+.bat-barra .bat-preenche{position:absolute;left:0;top:0;bottom:0;width:0;
+  border-radius:10px;background:var(--ok);transition:width .4s ease}
+/* A marca do corte precisa ler como marca, não como sujeira na barra: um
+   traço vertical claro, cortando a barra inteira, com o rótulo logo abaixo. */
+.bat-barra .bat-marca{position:absolute;top:-5px;bottom:-5px;width:3px;border-radius:3px;
+  background:var(--texto);box-shadow:0 0 0 2px var(--sup)}
+
+.bat-escala{position:relative;height:17px;margin-top:9px}
+.bat-escala span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;
+  font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--fraco)}
+
+.bat-txt{color:var(--meio);font-size:13px;line-height:1.45;margin-top:4px}
+.bat.atencao .bat-num strong,.bat.atencao .bat-estado{color:var(--alerta)}
+.bat.atencao .bat-barra .bat-preenche{background:var(--alerta)}
+.bat.critico .bat-num strong,.bat.critico .bat-estado{color:var(--falha)}
+.bat.critico .bat-barra .bat-preenche{background:var(--falha)}
 
 /* ---------- diagnóstico ---------- */
 .diag{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
@@ -534,14 +541,16 @@ input{font-family:inherit;font-size:16px}
         <section class="card">
           <h2><svg class="ic"><use href="#i-bateria"/></svg> Bateria do caminhão</h2>
           <div class="bat" id="bat">
-            <div class="bat-num"><strong id="batV">--</strong><span>V</span></div>
-            <div class="bat-dir">
-              <div class="bat-barra">
-                <i class="preenche" id="batPreenche"></i>
-                <i class="marca" id="batMarca" hidden></i>
-              </div>
-              <p class="bat-txt" id="batTxt">Lendo a tensão…</p>
+            <div class="bat-topo">
+              <div class="bat-num"><strong id="batV">--</strong><span>V</span></div>
+              <div class="bat-estado" id="batEstado">Lendo a tensão…</div>
             </div>
+            <div class="bat-barra">
+              <i class="bat-preenche" id="batPreenche"></i>
+              <i class="bat-marca" id="batMarca" hidden></i>
+            </div>
+            <div class="bat-escala"><span id="batLimiteTxt" hidden></span></div>
+            <p class="bat-txt" id="batTxt"></p>
           </div>
         </section>
 
@@ -833,35 +842,44 @@ function pintaBateria(s){
 
   $('batV').textContent = v;
   $('batPreenche').style.width = posicao(v) + '%';
+
   if(limite){
+    /* O rótulo é centrado na marca, mas preso entre 8% e 92% para não sair
+       pela borda do cartão quando o limite fica num extremo. */
+    const p = posicao(limite);
     $('batMarca').hidden = false;
-    $('batMarca').style.left = posicao(limite) + '%';
+    $('batMarca').style.left = p + '%';
+    $('batLimiteTxt').hidden = false;
+    $('batLimiteTxt').style.left = Math.min(92, Math.max(8, p)) + '%';
+    $('batLimiteTxt').textContent = 'desliga em ' + limite + ' V';
   }else{
     $('batMarca').hidden = true;
+    $('batLimiteTxt').hidden = true;
   }
 
-  let classe = '', titulo, texto;
+  let classe = '', estado, texto;
   if(FALHAS_TENSAO.indexOf(s.fault) >= 0){
     classe = 'critico';
-    titulo = 'Ar desligado pela proteção de bateria.';
-    texto  = 'Ligue o motor para carregar antes de usar o ar de novo.';
+    estado = 'Desligado pela proteção';
+    texto  = 'A bateria caiu abaixo do limite. Ligue o motor para carregar antes de usar o ar de novo.';
   }else if(limite && v <= limite){
     classe = 'critico';
-    titulo = 'Bateria abaixo do limite de segurança.';
+    estado = 'Abaixo do limite';
     texto  = 'O ar desliga em ' + limite + ' V para o caminhão não ficar sem partida.';
   }else if(limite && v <= limite + 1){
     classe = 'atencao';
-    titulo = 'Bateria baixa.';
+    estado = 'Bateria baixa';
     texto  = 'Falta pouco para o corte, que acontece em ' + limite + ' V.';
   }else if(limite){
-    titulo = 'Bateria em ordem.';
+    estado = 'Bateria em ordem';
     texto  = 'O ar desliga sozinho em ' + limite + ' V, para o caminhão não ficar sem partida.';
   }else{
-    titulo = 'Sistema de ' + sistema + ' V.';
+    estado = 'Sistema de ' + sistema + ' V';
     texto  = 'O ar desliga sozinho se a bateria cair demais.';
   }
   cx.className = 'bat' + (classe ? ' ' + classe : '');
-  $('batTxt').innerHTML = '<b>' + titulo + '</b>' + texto;
+  $('batEstado').textContent = estado;
+  $('batTxt').textContent = texto;
 }
 
 /* ---------- temperatura ---------- */

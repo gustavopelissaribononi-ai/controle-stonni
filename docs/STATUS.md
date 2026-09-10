@@ -172,6 +172,13 @@ O sistema (12 V ou 24 V) é deduzido da própria leitura em `sistemaDe()`: abaix
 O rótulo `Núcleo` virou **Temperatura interna** no diagnóstico, e `Tensão` saiu de lá — subiu
 para o cartão de bateria.
 
+⚠️ **Cuidado com nome de classe curto neste arquivo.** A marca do limite começou como
+`.marca` e colidiu com a `.marca` do logo do cabeçalho (`height:34px`, circular). Como
+`height` só estava declarado na regra do logo, ela vazava: o traço saía com 34 px em vez de
+20 e invadia o texto — e a seletividade maior de `.bat-barra .marca` não protegia, porque não
+declarava `height`. Por isso as peças do cartão são `.bat-marca` e `.bat-preenche`. Sendo um
+arquivo único com todo o CSS junto, prefixo por componente não é preciosismo.
+
 ### iPhone — instala, mas não controla
 
 Os passos de instalação no iPhone são outros (o menu é do Chrome, mas a instalação passa pelo
