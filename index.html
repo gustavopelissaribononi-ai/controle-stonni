@@ -615,14 +615,15 @@ input{font-family:inherit;font-size:16px}
             <label for="bVal">Valor</label>
             <input type="number" id="bVal" min="0" max="255" value="0" inputmode="numeric">
             <button class="btn" id="btnBruto" type="button">Enviar</button>
-            <button class="btn act" id="btnVarrer" type="button">Varrer 0–9</button>
+            <button class="btn act" id="btnVarrer" type="button">Varrer cmd 255</button>
             <button class="btn" id="btnCopiar" type="button">Copiar</button>
             <button class="btn" id="btnLimpar" type="button">Limpar</button>
           </div>
-          <p class="tec-nota"><b style="color:var(--texto)">Varrer 0–9</b> manda o mesmo
-             comando com os valores 0 a 9, um a cada 2,5 s, e escreve cada um no log. Serve
-             para descobrir qual valor faz o equipamento reagir — olhe o aparelho e anote em
-             qual valor ele mudou. Toque de novo para parar.</p>
+          <p class="tec-nota">O botão de varredura mostra <b style="color:var(--texto)">qual
+             comando</b> vai varrer — troque o campo <b style="color:var(--texto)">Cmd</b>
+             antes. Ele manda esse comando com os valores 0 a 9, um a cada 2,5 s, e escreve
+             cada envio no log. Olhe o equipamento e veja em qual valor ele reage. Toque de
+             novo para parar.</p>
           <p class="tec-nota">Âmbar no botão = enviado, aguardando o aparelho. As linhas
              <b style="color:var(--alerta)">confirmado…</b> mostram quanto tempo cada comando
              levou para o equipamento responder. Painel de teste — 5 toques no logo escondem
@@ -765,9 +766,19 @@ function montaAtivacao(n){
    motorista tocando de novo achando que o botão não pegou. Apareceu duas
    vezes no log de bancada. A fila serializa: cada escrita espera a
    anterior. */
-let filaGatt = Promise.resolve();
+/* Além de serializar, a fila deixa uma folga entre comandos. Nos dois logs de
+   bancada, "Desligar" e "Ligar" enviados com ~1 s de intervalo terminaram com o
+   aparelho desligado — a placa parece não honrar comandos colados. 300 ms é
+   imperceptível para quem toca e dá respiro para ela processar. */
+const FOLGA_MS = 300;
+let filaGatt = Promise.resolve(), ultimaEscritaEm = 0;
 function naFila(tarefa){
-  const proxima = filaGatt.then(tarefa, tarefa);
+  const proxima = filaGatt.then(async () => {
+    const falta = FOLGA_MS - (Date.now() - ultimaEscritaEm);
+    if(falta > 0) await new Promise(r => setTimeout(r, falta));
+    try{ return await tarefa(); }
+    finally{ ultimaEscritaEm = Date.now(); }
+  });
   filaGatt = proxima.catch(() => {});
   return proxima;
 }
@@ -1561,6 +1572,16 @@ $('btnBruto').onclick  = () => envia(+$('bCmd').value, +$('bVal').value, 'bruto'
    log, para descobrir qual valor o equipamento aceita. Foi o que faltou para
    o display: sabemos que 10/2 apaga, não sabemos o que acende. */
 let varrendo = false;
+/* O rótulo mostra o comando que será varrido. Sem isso é fácil varrer o 255
+   sem perceber, porque o campo já nasce preenchido — foi o que aconteceu no
+   primeiro teste de bancada. */
+function pintaVarrer(){
+  if(varrendo) return;
+  $('btnVarrer').textContent = 'Varrer cmd ' + ($('bCmd').value || '?');
+}
+$('bCmd').addEventListener('input', pintaVarrer);
+pintaVarrer();
+
 $('btnVarrer').onclick = async () => {
   const b = $('btnVarrer');
   if(varrendo){ varrendo = false; return; }          // segundo toque interrompe
@@ -1573,10 +1594,11 @@ $('btnVarrer').onclick = async () => {
     await envia(cmd, v, '↯ varredura ' + cmd + '/' + v);
     await new Promise(r => setTimeout(r, 2500));
   }
-  log(varrendo ? 'varredura terminada' : 'varredura interrompida', 'marco');
+  log(varrendo ? 'varredura do comando ' + cmd + ' terminada'
+               : 'varredura do comando ' + cmd + ' interrompida', 'marco');
   varrendo = false;
   b.classList.remove('rodando');
-  b.textContent = 'Varrer 0–9';
+  pintaVarrer();
 };
 $('btnLimpar').onclick = () => { $('log').innerHTML = ''; };
 $('btnCopiar').onclick = async () => {

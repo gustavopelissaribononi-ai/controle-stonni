@@ -198,6 +198,34 @@ Dois defeitos meus que o log expôs:
    atual fazia `valor()` casar contra o quadro **antigo** e declarar confirmado sem o aparelho
    ter dito nada. Agora só confirma se chegou quadro novo depois da marca (`ultimoQuadroEm`).
 
+### Segundo log de bancada (10/09/2026, 17:25–17:27)
+
+**A fila resolveu as colisões.** Nenhum `GATT operation already in progress` no log inteiro,
+contra duas ocorrências no anterior.
+
+**A varredura foi rodada no comando 255 por engano** — o campo `Cmd` já nasce preenchido e o
+botão ficava do lado dizendo só "Varrer 0–9". Agora o rótulo mostra **qual comando** vai
+varrer (`Varrer cmd 10`) e acompanha o campo enquanto se digita.
+
+⚠️ **Ligar não ligou, nos dois logs.** Em ambos, "Desligar" e "Ligar" foram enviados com ~1 s
+de intervalo e o aparelho terminou **desligado**, permanecendo assim por 40 s no primeiro log:
+
+| | Desligar | Ligar | Estado depois |
+|---|---|---|---|
+| log 1 | 17:09:03 | 17:09:07 | `1B` = desligado, por 40 s |
+| log 2 | 17:27:42 | 17:27:43 | `1B` = desligado até o fim |
+
+Duas leituras possíveis, e ainda não dá para escolher:
+
+1. `1 / 1` não liga — mesma assinatura do display, onde o `2` funciona e o `1` não;
+2. a placa **não honra comandos colados** — processou o "Desligar" e ignorou o "Ligar" que
+   veio 1 s depois.
+
+A segunda tem apoio: o display também mostra a placa demorando a processar. Por isso a fila
+passou a deixar **300 ms de folga entre comandos** (`FOLGA_MS`) — imperceptível ao toque, e dá
+respiro para ela. Se mesmo assim "Ligar" não ligar num teste isolado, cai a hipótese 2 e
+sobra a 1, que a varredura do comando `1` resolve.
+
 ### Retorno da bancada (10/09/2026) — o que o equipamento mostrou
 
 Primeiro teste com o ar de verdade:
@@ -382,6 +410,10 @@ mudou:
       visível de propósito, para a validação de bancada. Devolver `hidden` ao
       `<section id="painelTec">` e voltar a leitura do `localStorage` para mostrar só quando
       valer `'1'`. **Não pode ir para o cliente final com envio bruto de comando na tela.**
+- [ ] **Testar Ligar isolado, com o aparelho desligado e sem tocar em mais nada.** Nos dois
+      logs o "Ligar" veio 1 s depois de um "Desligar" e o aparelho ficou desligado. Se agora,
+      com a folga de 300 ms e um toque isolado, ele ligar, era comando colado. Se não ligar,
+      varrer o comando `1`.
 - [ ] **Descobrir o valor que ACENDE o display.** `10 / 2` apaga (confirmado); o `1` não
       acende. Usar a varredura do painel com o comando `10` e o display apagado. Achado o
       valor, o Display pode voltar a ser controle de dois estados — mas continua sem
