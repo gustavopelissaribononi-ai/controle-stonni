@@ -1965,7 +1965,12 @@ function traduzErroLogin(msg){
 }
 
 $('btnGoogle').onclick = () => {
-  const volta = location.href.split('#')[0];
+  /* origin + pathname, e não location.href: o manifest abre o app instalado em
+     ?src=pwa, e esse pedaço entraria no redirect_to. A lista de endereços
+     permitidos do Supabase compara o texto inteiro — com a query junto, o
+     Google volta com "requested path is invalid" só no app instalado, que é
+     justamente onde ninguém consegue abrir o console para ver o erro. */
+  const volta = location.origin + location.pathname;
   location.href = SUPA + '/auth/v1/authorize?provider=google&redirect_to='
                 + encodeURIComponent(volta);
 };

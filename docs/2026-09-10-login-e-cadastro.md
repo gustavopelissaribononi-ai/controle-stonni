@@ -41,6 +41,36 @@ Não existe OAuth em nenhum app do grupo — este seria o primeiro. Precisa de:
    `https://vishxwdxqiygbxmtpfoy.supabase.co/auth/v1/callback`
 3. **Supabase** → Authentication → Providers → Google → colar Client ID e Client Secret
 
+#### ⚠️ Publicar o app no Google está bloqueado — descoberto em 11/09/2026
+
+O projeto `controle-stonni` foi criado no Google Cloud (organização `leonardo-org`), com a
+tela de consentimento configurada como **Externo**. Mas o botão **Publicar app** vem
+desabilitado, com o recado *"complete your configuration on the Branding page"*.
+
+Para publicar, o Google exige trê s coisas que **hoje não existem**:
+
+| Exigência | Situação |
+|---|---|
+| Página de política de privacidade | **Não existe.** O `stonni.com.br` tem só duas páginas publicadas: a home e a "Página de exemplo" do WordPress |
+| Página de termos de uso | **Não existe**, mesma consulta |
+| `stonni.com.br` verificado no Google Search Console | Não consta; exige registro DNS no Cloudflare ou arquivo no WordPress — e **ninguém documentou quem tem esse acesso** |
+
+Enquanto não publicar, o app fica em **modo de teste**: só entra quem estiver na lista de
+usuários de teste (máximo 100 e-mails, cadastrados à mão). Dá para testar e até atender os
+primeiros clientes conhecidos, **mas não para vender ao público**.
+
+O que **não** é problema, ao contrário do que parece:
+
+- **A sessão do motorista não expira em 7 dias.** Esse limite do modo de teste vale para o
+  refresh token *do Google*, que só é usado no instante do login. Quem mantém a sessão depois
+  é o próprio Supabase, com token dele. O app continua logado offline como planejado.
+- **Publicar não cai em análise do Google.** O app pede só e-mail, nome e foto — escopos não
+  sensíveis. A demora da verificação vale para Gmail, Drive e Agenda, não para este caso.
+  O bloqueio é só a papelada acima.
+
+E o login por **e-mail/senha não depende de nada disso** — funciona assim que o provedor de
+e-mail estiver ligado no Supabase. Dá para lançar só com ele e acrescentar o Google depois.
+
 ### 3. URLs de redirecionamento
 
 Supabase → Authentication → URL Configuration → **Redirect URLs**, incluindo os dois endereços:
@@ -78,6 +108,8 @@ Recomendação: **sem confirmação** para não travar a instalação, e revisar
 
 - [ ] Revisar e aplicar `supabase/001_equipamentos.sql`
 - [ ] Configurar o provedor Google (Google Cloud + Supabase)
+- [ ] **Publicar o app no Google**: depende de página de privacidade, termos e
+      verificação do `stonni.com.br` no Search Console (ver aviso acima)
 - [ ] Cadastrar as Redirect URLs
 - [ ] Decidir a confirmação de e-mail
 - [ ] **Notificações**: precisa de chaves VAPID, guardar a inscrição de push por usuário e uma
