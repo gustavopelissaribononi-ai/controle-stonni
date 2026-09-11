@@ -10,7 +10,7 @@
 //
 //  ⚠️ Ao subir um deploy, BUMPAR VERSAO para invalidar o cache.
 // ============================================================
-const VERSAO = 'stonni-ar-v21-20260911';
+const VERSAO = 'stonni-ar-v22-20260911';
 const CASCA = [
   './',
   './index.html',
@@ -58,8 +58,19 @@ self.addEventListener('fetch', (ev) => {
 
   // casca do app: network-first, cai para o cache quando offline
   if (url.origin === location.origin) {
+    // ⚠️ fetch(req) passa pelo cache HTTP do navegador, e o GitHub Pages manda
+    // Cache-Control: max-age=600 no HTML. Sem no-store, "network-first" virava
+    // "cache-do-navegador-first": o app instalado continuava abrindo a versão
+    // antiga depois do deploy, sem ninguém entender por quê. Só na casca — os
+    // ícones podem e devem vir do cache.
+    const ehCasca = req.mode === 'navigate'
+      || url.pathname.endsWith('/')
+      || /\/(index\.html|manifest\.json)$/.test(url.pathname);
+    const busca = ehCasca
+      ? fetch(url.pathname + url.search, { cache: 'no-store' })
+      : fetch(req);
     ev.respondWith(
-      fetch(req).then((res) => {
+      busca.then((res) => {
         const copia = res.clone();
         caches.open(VERSAO).then((c) => c.put(req, copia)).catch(() => {});
         return res;

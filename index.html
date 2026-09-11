@@ -393,6 +393,13 @@ input{font-family:inherit;font-size:16px}
   font-size:12.5px;font-weight:600}
 .rodape-conta button:hover{color:var(--ciano)}
 .rodape-conta .ic{width:15px;height:15px}
+.rodape-conta .versao{width:100%;text-align:center}
+
+/* Versão à vista: sem ela, ninguém consegue dizer se o celular está rodando o
+   deploy novo ou uma cópia velha presa no cache — e foi exatamente o que
+   custou tempo aqui. */
+.versao{display:block;margin-top:6px;font-size:11px;color:var(--fraco);
+  opacity:.75;letter-spacing:.04em}
 
 .rodape{text-align:center;color:var(--fraco);font-size:12px;margin-top:26px;line-height:1.7}
 .rodape button{color:var(--meio);font-weight:600;text-decoration:underline;
@@ -549,7 +556,8 @@ input{font-family:inherit;font-size:16px}
         <li>Abrir pelo ícone da Stonni na tela de início</li>
       </ol>
 
-      <p class="dica">Já instalou? É só abrir pelo ícone.</p>
+      <p class="dica">Já instalou? É só abrir pelo ícone.
+      <span class="versao" id="versaoInstalar"></span></p>
     </div>
   </section>
 
@@ -814,6 +822,7 @@ input{font-family:inherit;font-size:16px}
     <p class="rodape">
       <button id="btnSair" type="button">Desconectar aparelho</button><br>
       Stonni · controle local por Bluetooth
+      <span class="versao" id="versaoRodape"></span>
     </p>
   </main>
 
@@ -824,6 +833,7 @@ input{font-family:inherit;font-size:16px}
   <button id="btnSairConta" type="button">
     <svg class="ic"><use href="#i-sair"/></svg> Sair da conta
   </button>
+  <span class="versao" id="versaoConta"></span>
 </p>
 
 <!-- leitor de código em tela cheia -->
@@ -2183,6 +2193,12 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
       .catch(() => {});
   });
 }
+
+/* Carimba a versão em todo lugar que o cliente pode olhar. É a primeira
+   pergunta do suporte: "qual versão está aí?" */
+const VERSAO_APP = 'v22';
+['versaoRodape', 'versaoInstalar', 'versaoConta']
+  .forEach(id => { const e = $(id); if(e) e.textContent = VERSAO_APP; });
 
 /* decide a tela inicial. pegaSessaoDaUrl() vem antes porque o Google volta
    com os tokens no fragmento da URL. */
