@@ -1,7 +1,7 @@
 # STATUS — controle-stonni (ar-condicionado por Bluetooth)
 
 > Índice vivo do projeto. Atualizar sempre que mexer.
-> Última atualização: **10/09/2026**
+> Última atualização: **11/09/2026**
 
 ## O que é
 
@@ -52,7 +52,44 @@ Vercel; no Pages a barreira é o passo `Monta o site` do workflow.
 usá-lo num teste, servir da máquina local (`preview_start` + encaminhamento de porta por USB)
 ou republicá-lo temporariamente.
 
-## Publicação (decidido em 10/09/2026)
+## ⚠️ O domínio já existe — e não está onde se pensava (descoberto em 11/09/2026)
+
+`controle.stonni.com.br` **já responde**, e **não está na Vercel**: está na **Hostinger**, no
+mesmo servidor do WordPress. Confirmado pelos cabeçalhos da resposta — `platform: hostinger`,
+`panel: hpanel`, `x-turbo-charged-by: LiteSpeed`.
+
+**Consequência: push no GitHub não atualiza esse endereço.** Em 11/09/2026 ele servia a **v14**,
+de 10/09 — treze versões atrás. Sem login, sem cadastro de equipamento, sem atualização
+automática, **com o painel técnico ainda dentro** (`btnBruto`, `btnLimpar`, "Varrer"), e com o
+service worker `v14`, anterior ao conserto do cache — quem instalasse por ali **nunca receberia
+atualização**.
+
+### E o protocolo estava público
+
+A pasta **inteira** do projeto foi enviada para a Hostinger. Os três respondiam **HTTP 200**:
+
+```
+controle.stonni.com.br/docs/STATUS.md             26 KB — este arquivo, com o protocolo inteiro
+controle.stonni.com.br/bancada/testador-ble.html  o testador que manda quadro bruto
+controle.stonni.com.br/README.md
+```
+
+O GitHub Pages estava limpo (404 nos três): o `pages.yml` publica só `index.html`,
+`manifest.json`, `sw.js` e `icons/`. **A correção de 10/09 fechou um dos dois endereços, e
+ninguém sabia do outro.** A lição não é sobre o Pages: é que **existia um segundo destino de
+publicação que não estava em lugar nenhum da documentação**.
+
+### O procedimento, enquanto não for para a Vercel
+
+`publicar/gerar.cmd` monta `publicar/controle-stonni.zip` com exatamente os arquivos que podem
+ficar públicos — a mesma lista do `pages.yml`, de propósito. Leva junto um `.htaccess` que
+devolve 404 para `docs/`, `bancada/`, `arte/`, `supabase/` e qualquer `.md`/`.sql`, como segunda
+barreira caso alguém envie a pasta inteira outra vez. Detalhes em `publicar/LEIAME.md`.
+
+⚠️ **Enviar o pacote não apaga nada no servidor** — os arquivos expostos precisam ser apagados
+à mão antes.
+
+## Publicação (decidido em 10/09/2026, ainda o destino desejado)
 
 Subdomínio próprio na Vercel — seria o **primeiro domínio próprio do grupo**; os outros 16
 apps rodam em `*.vercel.app`. Passos que dependem de acesso a conta:
@@ -516,6 +553,44 @@ ar conectado a atualização fica guardada em `atualizacaoPronta` e só é aplic
 no primeiro momento seguro — ao desconectar, ou ao voltar ao app já
 desconectado. Verificado nos dois caminhos.
 
+## ⚠️ O `Site URL` do Supabase é compartilhado — e já mordeu duas vezes (11/09/2026)
+
+O projeto Supabase é o mesmo dos 16 apps do grupo, e o **`Site URL` é único**:
+`https://bononi-dashboard.vercel.app`. Ele **não pode ser trocado** — é o endereço dos e-mails de
+todos os apps. Trocá-lo por este faria quem pede "esqueci minha senha" no Dashboard, no Portal ou
+na Assistência receber um link que cai no controle do ar-condicionado.
+
+O Supabase cai no `Site URL` **em silêncio** sempre que o endereço de volta não está na lista de
+permitidos ou não é enviado. Aconteceu duas vezes no mesmo dia:
+
+| Caso | Sintoma | Correção |
+|---|---|---|
+| Login com Google | O cliente logava e **caía no Dashboard interno**, autenticado | Cadastrar as Redirect URLs (as quatro, com e sem `/**`) |
+| Confirmação de e-mail | O cadastro chamava `/auth/v1/signup` **sem `redirect_to`** — o link do e-mail levava ao Dashboard | `enderecoDeVolta()` agora vai nos **dois** caminhos |
+
+⚠️ **A confirmação de e-mail está LIGADA** no Supabase (conferido em `/auth/v1/settings`:
+`mailer_autoconfirm` falso). O cliente precisa sair do app, abrir o e-mail e voltar — no meio da
+instalação do ar, com o caminhão parado. A nota de 10/09 recomenda desligar; **ainda não foi
+desligada**. Com o `redirect_to` no lugar, se ficar ligada pelo menos o cliente volta para o app.
+
+## Política de privacidade — uma página trava três coisas (11/09/2026)
+
+O `stonni.com.br` **não tem página de política de privacidade** (a API do WordPress lista apenas a
+home e a "Página de exemplo"). Isso trava, ao mesmo tempo:
+
+1. **Publicar o app no Google** — o botão "Publicar app" fica desabilitado; até lá só entra quem
+   estiver na lista de usuários de teste
+2. **App Store** — exige URL de política + *Privacy Nutrition Label* coerente com ela
+3. **Play Store** — exige URL de política + formulário *Data Safety* coerente com ela
+
+Rascunho pronto em `docs/politica-de-privacidade.md` (texto) e `docs/politica-de-privacidade.html`
+(para colar no WordPress), escrito a partir de auditoria do código: **zero rastreadores**, os
+únicos servidores contatados são o Supabase e o Google Fonts, e as permissões pedidas são câmera,
+Bluetooth e vibração. Faltam razão social, CNPJ, endereço e e-mail de contato.
+
+⚠️ **Apple e Google exigem exclusão de conta dentro do app** de quem oferece criação de conta.
+Hoje só existe "Sair da conta". É obrigatório antes de submeter às lojas.
+
 ## Pendências
 
 - [ ] **Confirmar o display com a polaridade nova** (`10 / 1` apaga, `10 / 2` acende). A
@@ -528,6 +603,19 @@ desconectado. Verificado nos dois caminhos.
       10/09/2026: ventilador, alvo, turbo e luz bateram exatos, checksum OK em 18 quadros.
 - [ ] **Confirmar que 20,5 V é mesmo o corte** (`underV` = 205 em décimos). O número é
       plausível e constante, mas ninguém viu o ar cortar nessa tensão ainda.
+- [ ] 🔴 **Apagar `docs/`, `bancada/`, `arte/` e `README.md` da Hostinger.** O protocolo está
+      público em `controle.stonni.com.br`. Não depende de decisão nenhuma.
+- [ ] 🔴 **Decidir onde o domínio mora**: Vercel (deploy automático) ou Hostinger com o
+      procedimento de `publicar/`. Enquanto não resolver, **não divulgar o domínio** — o
+      endereço correto hoje é o do GitHub Pages.
+- [ ] 🔴 **Desligar a confirmação de e-mail** no Supabase (Authentication → Providers → Email).
+- [ ] **Publicar a página de política de privacidade** no site (rascunho em `docs/`). Destrava
+      Google, App Store e Play Store de uma vez.
+- [ ] **Cadastrar os usuários de teste do Google** — hoje só a conta dona do projeto entra.
+- [ ] **Exclusão de conta dentro do app** — exigida pelas duas lojas; hoje só existe sair.
+- [ ] **Testar o cadastro do equipamento ponta a ponta.** A tabela foi criada em 11/09 e está
+      vazia; o `POST` com `Prefer: resolution=merge-duplicates` nunca rodou com sessão real. Se
+      falhar, **o app não avisa** — grava no celular e engole o erro.
 - [ ] **Publicar** — Web Bluetooth exige https. Ver seção Publicação; o gargalo é acesso
       ao Cloudflare, não código.
 - [ ] Confirmar a instalação num Android real: botão "Instalar" aparecendo, ícone sem
