@@ -342,6 +342,33 @@ input{font-family:inherit;font-size:16px}
 .recado.ok .ic{color:var(--ciano)}
 
 /* passo a passo de instalação manual, quando o Chrome não oferece o botão */
+/* ---------- login ---------- */
+.form-campo{margin-bottom:13px}
+.form-campo label{display:block;font-size:12.5px;font-weight:700;color:var(--meio);
+  text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.form-campo input{width:100%;background:var(--afundado);border:1px solid var(--linha);
+  border-radius:var(--r);color:var(--texto);padding:14px 15px}
+.form-campo input:focus{outline:none;border-color:var(--ciano);
+  box-shadow:0 0 0 3px var(--ciano-tinta)}
+.btn.google{background:#fff;border-color:#fff;color:#1F1F1F;font-weight:600}
+.btn.google:hover{background:#F1F3F4;border-color:#F1F3F4}
+.btn.google .ic{stroke:none}
+.ou{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--fraco);
+  font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--linha)}
+.troca-modo{text-align:center;margin-top:18px;color:var(--meio);font-size:14px}
+.troca-modo button{color:var(--ciano);font-weight:700;text-decoration:underline;
+  text-underline-offset:3px}
+
+/* ---------- cadastro do equipamento ---------- */
+.passos-cad{list-style:none;margin:24px 0 20px}
+.passos-cad li{display:flex;gap:13px;align-items:flex-start;margin-bottom:18px}
+.passos-cad .n{flex:none;width:26px;height:26px;border-radius:50%;margin-top:26px;
+  background:var(--ciano-tinta);color:var(--ciano);font-size:13px;font-weight:700;
+  display:grid;place-items:center}
+.passos-cad li.ok .n{background:var(--ok);color:#052B12}
+.passos-cad .corpo{flex:1;min-width:0}
+
 /* notas da tela de instalação: o que a pessoa precisa saber antes de tentar */
 .notas{list-style:none;margin:22px 0 4px}
 .notas li{display:flex;gap:11px;align-items:flex-start;margin-bottom:11px;
@@ -358,6 +385,14 @@ input{font-family:inherit;font-size:16px}
   font-size:13px;font-weight:700;display:grid;place-items:center}
 .passos b{color:var(--texto);font-weight:600}
 .passos em{font-style:normal;color:var(--texto)}
+
+.rodape-conta{display:flex;align-items:center;justify-content:center;gap:14px;
+  flex-wrap:wrap;max-width:520px;margin:26px auto 0;padding:0 16px;
+  color:var(--fraco);font-size:12.5px}
+.rodape-conta button{display:inline-flex;align-items:center;gap:6px;color:var(--meio);
+  font-size:12.5px;font-weight:600}
+.rodape-conta button:hover{color:var(--ciano)}
+.rodape-conta .ic{width:15px;height:15px}
 
 .rodape{text-align:center;color:var(--fraco);font-size:12px;margin-top:26px;line-height:1.7}
 .rodape button{color:var(--meio);font-weight:600;text-decoration:underline;
@@ -435,6 +470,9 @@ input{font-family:inherit;font-size:16px}
   <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8"/><path d="M8.2 12.3 11 15.1l4.8-5.6"/></symbol>
   <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3.4" y="3.4" width="6.4" height="6.4" rx="1.3"/><rect x="14.2" y="3.4" width="6.4" height="6.4" rx="1.3"/><rect x="3.4" y="14.2" width="6.4" height="6.4" rx="1.3"/><path d="M14.2 14.2h3.1v3.1h-3.1zM20.6 14.2v2M20.6 20.6h-3.3M14.2 20.6h.1"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"/></symbol>
+  <symbol id="i-barras" viewBox="0 0 24 24"><path d="M3.5 5.5v13M6.8 5.5v13M10 5.5v13M13.4 5.5v13M17 5.5v13M20.5 5.5v13"/></symbol>
+  <symbol id="i-google" viewBox="0 0 24 24" fill="none"><path d="M21.6 12.2c0-.7-.06-1.35-.18-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.75 3-4.3 3-7.3z" fill="#4285F4" stroke="none"/><path d="M12 22c2.7 0 4.96-.9 6.6-2.43l-3.2-2.5c-.9.6-2.05.95-3.4.95-2.6 0-4.8-1.76-5.6-4.12H3.1v2.6A10 10 0 0 0 12 22z" fill="#34A853" stroke="none"/><path d="M6.4 13.9a6 6 0 0 1 0-3.8V7.5H3.1a10 10 0 0 0 0 9l3.3-2.6z" fill="#FBBC05" stroke="none"/><path d="M12 5.98c1.47 0 2.78.5 3.82 1.5l2.84-2.84C16.95 3.05 14.7 2 12 2A10 10 0 0 0 3.1 7.5l3.3 2.6C7.2 7.74 9.4 5.98 12 5.98z" fill="#EA4335" stroke="none"/></symbol>
+  <symbol id="i-sair" viewBox="0 0 24 24"><path d="M9.5 20.5H5.5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4"/><path d="M16 16.5 20.5 12 16 7.5"/><path d="M20.5 12H9.5"/></symbol>
   <symbol id="i-bateria" viewBox="0 0 24 24"><rect x="2.4" y="6.8" width="16.4" height="10.4" rx="2.4"/><path d="M21.6 10.4v3.2"/><path d="M11.4 9.4 8.6 13.2h3.4l-1 2.6"/></symbol>
 </svg>
 
@@ -508,6 +546,89 @@ input{font-family:inherit;font-size:16px}
 
       <p class="dica">Já instalou? É só abrir pelo ícone.</p>
     </div>
+  </section>
+
+  <!-- ================= TELA: ENTRAR ================= -->
+  <section id="telaLogin" hidden>
+    <div class="hero">
+      <div class="selo">Sua conta Stonni</div>
+      <h1 id="loginTitulo">Entrar<em>para usar o controle do seu ar.</em></h1>
+      <p id="loginTexto">Você entra uma vez. Depois o app abre direto, mesmo sem
+         internet.</p>
+    </div>
+
+    <button class="btn google largo" id="btnGoogle" type="button">
+      <svg class="ic"><use href="#i-google"/></svg> Continuar com o Google
+    </button>
+
+    <div class="ou">ou</div>
+
+    <div class="form-campo">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="email" inputmode="email"
+             spellcheck="false" placeholder="voce@exemplo.com">
+    </div>
+    <div class="form-campo">
+      <label for="senha">Senha</label>
+      <input type="password" id="senha" autocomplete="current-password"
+             placeholder="pelo menos 6 caracteres">
+    </div>
+
+    <button class="btn cheio largo" id="btnEntrar" type="button">Entrar</button>
+
+    <p class="troca-modo">
+      <span id="trocaTexto">Ainda não tem conta?</span>
+      <button id="btnTrocaModo" type="button">Criar conta</button>
+    </p>
+  </section>
+
+  <!-- ================= TELA: CADASTRAR O EQUIPAMENTO ================= -->
+  <section id="telaCadastro" hidden>
+    <div class="hero">
+      <div class="selo">Primeiro acesso</div>
+      <h1>Cadastre seu ar<em>dois códigos, uma vez só.</em></h1>
+      <p>Depois disso o app abre já conectado, sem escanear mais nada.</p>
+    </div>
+
+    <ol class="passos-cad">
+      <li id="passoSku"><i class="n">1</i>
+        <div class="corpo">
+          <div class="campo">
+            <label for="valSku">Código de barras do produto</label>
+            <div class="campo-linha">
+              <input type="text" id="valSku" placeholder="escaneie ou digite"
+                     autocomplete="off" spellcheck="false">
+              <button class="btn qr" id="btnLerSku" type="button"
+                      aria-label="Escanear código de barras">
+                <svg class="ic"><use href="#i-barras"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li id="passoQr"><i class="n">2</i>
+        <div class="corpo">
+          <div class="campo">
+            <label for="valQr">QR Code do aparelho</label>
+            <div class="campo-linha">
+              <input type="text" id="valQr" placeholder="escaneie ou digite"
+                     autocomplete="off" autocapitalize="characters" spellcheck="false">
+              <button class="btn qr" id="btnLerQr" type="button"
+                      aria-label="Escanear QR Code do aparelho">
+                <svg class="ic"><use href="#i-qr"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <button class="btn cheio largo" id="btnSalvarEquip" type="button" disabled>
+      <svg class="ic"><use href="#i-bt"/></svg> Conectar e salvar
+    </button>
+
+    <p class="dica" style="text-align:center;margin-top:13px">Não precisa ligar o ar antes —
+       ele conecta com o equipamento desligado.</p>
   </section>
 
   <!-- ================= TELA: CONECTAR (só no app instalado) ================= -->
@@ -693,11 +814,18 @@ input{font-family:inherit;font-size:16px}
 
 </div>
 
-<!-- leitor de QR Code em tela cheia -->
+<p class="rodape-conta" id="rodapeConta" hidden>
+  <span id="contaEmail"></span>
+  <button id="btnSairConta" type="button">
+    <svg class="ic"><use href="#i-sair"/></svg> Sair da conta
+  </button>
+</p>
+
+<!-- leitor de código em tela cheia -->
 <div class="leitor" id="leitor" hidden>
   <video id="camera" playsinline muted></video>
   <div class="mira"></div>
-  <p class="leitor-txt">Aponte para o QR Code<br>colado no equipamento</p>
+  <p class="leitor-txt" id="leitorTxt">Aponte para o QR Code<br>colado no equipamento</p>
   <button class="btn leitor-x" id="btnFechaLeitor" type="button">
     <svg class="ic"><use href="#i-x"/></svg> Cancelar
   </button>
@@ -1093,12 +1221,136 @@ function mexeTemp(d){
 }
 
 /* ==========================================================================
+   CONTA DO CLIENTE
+   Sem SDK: chamadas diretas em /auth/v1/*, como os outros apps do grupo.
+   Mantém o app sem dependência externa e sem nada para baixar antes de abrir.
+
+   ⚠️ A REGRA QUE NÃO PODE SER QUEBRADA: o controle do ar NUNCA espera a rede.
+   Login acontece uma vez, com internet. Depois a sessão vive no aparelho, e
+   abrir o app e conectar no Bluetooth não faz nenhuma chamada. Falha de
+   renovação NÃO desloga — offline não pode expulsar o motorista do ar dele.
+   ========================================================================== */
+const SUPA = 'https://vishxwdxqiygbxmtpfoy.supabase.co';
+const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpc2h4d2R4cWl5Z2J4bXRwZm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0Njg2MjIsImV4cCI6MjA4ODA0NDYyMn0.J647m3ieDHahNQYBWMRESl0aPFXsT_zt_7ZcDvyB-SA';
+
+const CHAVE_SESSAO = 'stonni_ar_sessao';
+const CHAVE_EQUIP  = 'stonni_ar_equipamento';
+
+const leGuardado = c => { try{ const v = localStorage.getItem(c); return v ? JSON.parse(v) : null; }catch(e){ return null; } };
+const guarda = (c, v) => { try{ localStorage.setItem(c, JSON.stringify(v)); }catch(e){} };
+
+let sessao      = leGuardado(CHAVE_SESSAO);
+let equipamento = leGuardado(CHAVE_EQUIP);
+let modoCriar   = false;
+
+async function apiAuth(caminho, corpo){
+  const r = await fetch(SUPA + '/auth/v1/' + caminho, {
+    method: 'POST',
+    headers: { apikey: ANON, 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo)
+  });
+  const j = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(j.error_description || j.msg || j.message || ('erro ' + r.status));
+  return j;
+}
+
+function guardaSessao(j){
+  if(!j || !j.access_token) return false;
+  sessao = {
+    access_token : j.access_token,
+    refresh_token: j.refresh_token || (sessao && sessao.refresh_token) || '',
+    expira_em    : Date.now() + ((j.expires_in || 3600) * 1000),
+    email        : (j.user && j.user.email) || (sessao && sessao.email) || '',
+    user_id      : (j.user && j.user.id)    || (sessao && sessao.user_id) || ''
+  };
+  guarda(CHAVE_SESSAO, sessao);
+  return true;
+}
+
+/* O Google devolve os tokens no fragmento da URL. Limpa a barra de endereço
+   depois, senão o token fica no histórico. */
+function pegaSessaoDaUrl(){
+  if(!location.hash || location.hash.indexOf('access_token') < 0) return false;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const ok = guardaSessao({
+    access_token : p.get('access_token'),
+    refresh_token: p.get('refresh_token'),
+    expires_in   : +(p.get('expires_in') || 3600)
+  });
+  history.replaceState(null, '', location.pathname + location.search);
+  return ok;
+}
+
+/* Completa e-mail e id quando a sessão veio do Google. Sem pressa, sem travar. */
+async function buscaUsuario(){
+  if(!sessao || (sessao.user_id && sessao.email)) return;
+  try{
+    const r = await fetch(SUPA + '/auth/v1/user',
+      { headers: { apikey: ANON, Authorization: 'Bearer ' + sessao.access_token } });
+    if(!r.ok) return;
+    const u = await r.json();
+    sessao.user_id = u.id; sessao.email = u.email || '';
+    guarda(CHAVE_SESSAO, sessao);
+    pintaConta();
+  }catch(e){}
+}
+
+/* Renova só quando está perto de vencer. Falhar aqui é silencioso de
+   propósito: sem rede, a sessão guardada continua valendo. */
+async function renovaSessao(){
+  if(!sessao || !sessao.refresh_token) return;
+  if(Date.now() < sessao.expira_em - 120000) return;
+  try{
+    guardaSessao(await apiAuth('token?grant_type=refresh_token',
+      { refresh_token: sessao.refresh_token }));
+    log('sessão renovada');
+  }catch(e){ log('sem renovar a sessão agora: ' + e.message); }
+}
+
+function sair(){
+  if(carTx) desconectar();
+  try{ localStorage.removeItem(CHAVE_SESSAO); localStorage.removeItem(CHAVE_EQUIP); }catch(e){}
+  sessao = null; equipamento = null;
+  recado();
+  roteia();
+}
+
+/* Grava o equipamento local NA HORA (vale offline) e tenta mandar depois. */
+function salvaEquipamento(sku, aparelho){
+  equipamento = { sku, aparelho, criado_em: new Date().toISOString(), sincronizado: false };
+  guarda(CHAVE_EQUIP, equipamento);
+  sincronizaEquipamento();
+}
+
+async function sincronizaEquipamento(){
+  if(!equipamento || equipamento.sincronizado || !sessao || !sessao.user_id) return;
+  try{
+    const r = await fetch(SUPA + '/rest/v1/stonni_ar_equipamentos', {
+      method: 'POST',
+      headers: { apikey: ANON, Authorization: 'Bearer ' + sessao.access_token,
+                 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({ user_id: sessao.user_id, sku: equipamento.sku,
+                             aparelho: equipamento.aparelho })
+    });
+    if(r.ok){
+      equipamento.sincronizado = true; guarda(CHAVE_EQUIP, equipamento);
+      log('equipamento sincronizado com a conta');
+    }else{
+      log('equipamento ainda não sincronizado (HTTP ' + r.status + ')', 'err');
+    }
+  }catch(e){ log('sem rede para sincronizar o equipamento; fica para a próxima'); }
+}
+
+/* ==========================================================================
    LEITOR DE QR CODE
    BarcodeDetector é nativo no Chrome do Android: sem biblioteca, sem rede,
    funciona com o app offline. Onde não existir, o campo manual continua
    valendo — por isso ele não sai da tela.
    ========================================================================== */
-let fluxoCam = null, lendoQR = false;
+let fluxoCam = null, lendoAgora = false, entregaLeitura = null;
+
+const FORMATOS_QR     = ['qr_code'];
+const FORMATOS_BARRAS = ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar'];
 
 const podeLerQR = () =>
   'BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
@@ -1116,57 +1368,62 @@ function extraiCodigo(txt){
   return m ? m[0] : bruto;
 }
 
-async function abreLeitor(){
-  if(!podeLerQR()){
-    recado('Este celular não lê QR Code pelo app.',
-           ' Digite o código que está no adesivo do equipamento.');
-    return;
-  }
-  try{
-    fluxoCam = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }
-    });
-  }catch(e){
-    log('câmera negada: ' + e.name + ' — ' + e.message, 'err');
-    recado('Não consegui abrir a câmera.',
-           ' Autorize o acesso à câmera nas permissões do app, ou digite o código do adesivo.');
-    return;
-  }
-  recado();
-  const v = $('camera');
-  v.srcObject = fluxoCam;
-  await v.play().catch(() => {});
-  $('leitor').hidden = false;
-  lendoQR = true;
-  varreQR();
+/* Abre a câmera e devolve o que leu, ou null se a pessoa cancelou. Um leitor
+   só para os dois usos: código de barras do produto e QR do aparelho. */
+function leCodigo(formatos, titulo){
+  return new Promise(async (entrega) => {
+    if(!podeLerQR()){
+      recado('Este celular n\u00e3o l\u00ea c\u00f3digo pela c\u00e2mera.',
+             ' Digite o c\u00f3digo que est\u00e1 no adesivo do equipamento.');
+      entrega(null); return;
+    }
+    try{
+      fluxoCam = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } }
+      });
+    }catch(e){
+      log('câmera negada: ' + e.name + ' - ' + e.message, 'err');
+      recado('N\u00e3o consegui abrir a c\u00e2mera.',
+             ' Autorize a c\u00e2mera nas permiss\u00f5es do app, ou digite o c\u00f3digo do adesivo.');
+      entrega(null); return;
+    }
+    recado();
+    entregaLeitura = entrega;
+    $('leitorTxt').innerHTML = titulo;
+    const v = $('camera');
+    v.srcObject = fluxoCam;
+    await v.play().catch(() => {});
+    $('leitor').hidden = false;
+    lendoAgora = true;
+    varre(formatos);
+  });
 }
 
-function fechaLeitor(){
-  lendoQR = false;
+function fechaLeitor(valor){
+  lendoAgora = false;
   $('leitor').hidden = true;
   if(fluxoCam){ fluxoCam.getTracks().forEach(t => t.stop()); fluxoCam = null; }
   $('camera').srcObject = null;
+  const entrega = entregaLeitura; entregaLeitura = null;
+  if(entrega) entrega(valor === undefined ? null : valor);
 }
 
-async function varreQR(){
+async function varre(formatos){
   let detector;
-  try{ detector = new BarcodeDetector({ formats: ['qr_code'] }); }
+  try{ detector = new BarcodeDetector({ formats: formatos }); }
   catch(e){
-    fechaLeitor();
-    recado('Este celular não lê QR Code pelo app.',
-           ' Digite o código que está no adesivo do equipamento.');
+    recado('Este celular n\u00e3o l\u00ea esse tipo de c\u00f3digo.',
+           ' Digite o c\u00f3digo que est\u00e1 no adesivo do equipamento.');
+    fechaLeitor(null);
     return;
   }
-  while(lendoQR){
+  while(lendoAgora){
     try{
       const achados = await detector.detect($('camera'));
       if(achados.length){
-        const codigo = extraiCodigo(achados[0].rawValue);
-        log('QR lido: "' + achados[0].rawValue + '" → ' + codigo);
         vibra(30);
-        fechaLeitor();
-        $('nomeAp').value = codigo;
-        conectar();                  // leu o código, não faz sentido pedir outro toque
+        log('lido pela câmera: "' + achados[0].rawValue + '"');
+        fechaLeitor(achados[0].rawValue);
         return;
       }
     }catch(e){ /* quadro ruim; tenta o próximo */ }
@@ -1190,10 +1447,16 @@ const instalado = () =>
   MODOS_APP.some(m => matchMedia('(display-mode: ' + m + ')').matches)
   || navigator.standalone === true;
 
-function mostraTela(conectado){
-  $('telaInstalar').hidden = true;
-  $('telaConectar').hidden = conectado;
-  $('telaControle').hidden = !conectado;
+const TELAS = ['telaInstalar', 'telaLogin', 'telaCadastro', 'telaConectar', 'telaControle'];
+function mostra(id){ TELAS.forEach(t => { $(t).hidden = (t !== id); }); }
+
+function mostraTela(conectado){ mostra(conectado ? 'telaControle' : 'telaConectar'); }
+
+/* Mostra de quem é a conta, e o caminho de sair. Só aparece depois do login. */
+function pintaConta(){
+  const tem = !!sessao;
+  $('rodapeConta').hidden = !tem;
+  if(tem) $('contaEmail').textContent = sessao.email || 'conta conectada';
 }
 
 /* Decide o que mostrar ao abrir. Só é chamada uma vez, na carga. */
@@ -1203,16 +1466,30 @@ function roteia(){
      que fazia era prender o iPhone na tela de instalação depois de ele já ter
      instalado, sem saída nenhuma. Quem explica a limitação é o aviso, que fica
      visível nas duas telas. */
-  if(instalado()){
-    $('chip').hidden = false;
-    mostraTela(false);
-    reconectaSozinho();
+  if(!instalado()){
+    $('chip').hidden = true;
+    pintaConta();
+    mostra('telaInstalar');
     return;
   }
-  $('chip').hidden = true;
-  $('telaInstalar').hidden = false;
-  $('telaConectar').hidden = true;
-  $('telaControle').hidden = true;
+
+  pintaConta();
+
+  /* Sem conta, entra. Sem equipamento, cadastra. Depois disso, só o controle.
+     Nenhuma dessas checagens toca a rede: tudo sai do armazenamento local. */
+  if(!sessao){        $('chip').hidden = true;  mostra('telaLogin');    return; }
+  if(!equipamento){   $('chip').hidden = true;  mostra('telaCadastro'); return; }
+
+  $('chip').hidden = false;
+  if(equipamento.aparelho) $('nomeAp').value = equipamento.aparelho;
+  mostraTela(false);
+  reconectaSozinho();
+
+  /* Depois de já estar na tela certa: renova a sessão e manda o cadastro que
+     ficou pendente, se houver rede. Nada disso segura a conexão. */
+  renovaSessao();
+  buscaUsuario();
+  sincronizaEquipamento();
 }
 
 /* ==========================================================================
@@ -1233,10 +1510,9 @@ async function reconectaSozinho(){
 
   /* prefere o último aparelho usado; na dúvida, o primeiro autorizado */
   let alvo = null;
-  try{
-    const n = localStorage.getItem('stonni_ar_nome');
-    if(n) alvo = lista.find(d => d.name === n);
-  }catch(e){}
+  const nome = (equipamento && equipamento.aparelho)
+    || (() => { try{ return localStorage.getItem('stonni_ar_nome'); }catch(e){ return null; } })();
+  if(nome) alvo = lista.find(d => d.name === nome);
   alvo = alvo || lista[0];
 
   aparelho = alvo;
@@ -1583,8 +1859,123 @@ document.querySelectorAll('.chv').forEach(b => {
 });
 
 $('nomeAp').addEventListener('keydown', e => { if(e.key === 'Enter') conectar(); });
-$('btnQR').onclick = abreLeitor;
-$('btnFechaLeitor').onclick = fechaLeitor;
+$('btnFechaLeitor').onclick = () => fechaLeitor(null);
+
+/* ---------- leitura de código ---------- */
+const TITULO_QR     = 'Aponte para o <b>QR Code</b><br>colado no equipamento';
+const TITULO_BARRAS = 'Aponte para o <b>código de barras</b><br>da caixa ou do produto';
+
+$('btnQR').onclick = async () => {
+  const bruto = await leCodigo(FORMATOS_QR, TITULO_QR);
+  if(!bruto) return;
+  $('nomeAp').value = extraiCodigo(bruto);
+  conectar();
+};
+
+$('btnLerSku').onclick = async () => {
+  const bruto = await leCodigo(FORMATOS_BARRAS, TITULO_BARRAS);
+  if(bruto){ $('valSku').value = String(bruto).trim(); confereCadastro(); }
+};
+
+$('btnLerQr').onclick = async () => {
+  const bruto = await leCodigo(FORMATOS_QR, TITULO_QR);
+  if(bruto){ $('valQr').value = extraiCodigo(bruto); confereCadastro(); }
+};
+
+/* ---------- cadastro do equipamento ---------- */
+function confereCadastro(){
+  const sku = $('valSku').value.trim(), ap = $('valQr').value.trim();
+  $('passoSku').classList.toggle('ok', !!sku);
+  $('passoQr').classList.toggle('ok', !!ap);
+  $('btnSalvarEquip').disabled = !(sku && ap);
+}
+$('valSku').addEventListener('input', confereCadastro);
+$('valQr').addEventListener('input', confereCadastro);
+
+$('btnSalvarEquip').onclick = async () => {
+  const sku = $('valSku').value.trim(), ap = $('valQr').value.trim();
+  if(!sku || !ap) return;
+  salvaEquipamento(sku, ap);
+  $('nomeAp').value = ap;
+  $('chip').hidden = false;
+  mostraTela(false);
+  conectar();
+};
+
+/* ---------- entrar e criar conta ---------- */
+function pintaModoLogin(){
+  $('loginTitulo').innerHTML = modoCriar
+    ? 'Criar conta<em>para usar o controle do seu ar.</em>'
+    : 'Entrar<em>para usar o controle do seu ar.</em>';
+  $('btnEntrar').textContent = modoCriar ? 'Criar conta' : 'Entrar';
+  $('trocaTexto').textContent = modoCriar ? 'Já tem conta?' : 'Ainda não tem conta?';
+  $('btnTrocaModo').textContent = modoCriar ? 'Entrar' : 'Criar conta';
+  $('senha').setAttribute('autocomplete', modoCriar ? 'new-password' : 'current-password');
+}
+
+$('btnTrocaModo').onclick = () => { modoCriar = !modoCriar; recado(); pintaModoLogin(); };
+
+$('btnEntrar').onclick = async () => {
+  const email = $('email').value.trim(), senha = $('senha').value;
+  if(!email || !senha){
+    recado('Faltou preencher.', ' Informe e-mail e senha para continuar.');
+    return;
+  }
+  if(modoCriar && senha.length < 6){
+    recado('Senha muito curta.', ' Use pelo menos 6 caracteres.');
+    return;
+  }
+  const b = $('btnEntrar');
+  b.disabled = true;
+  b.textContent = modoCriar ? 'Criando…' : 'Entrando…';
+  try{
+    const j = modoCriar
+      ? await apiAuth('signup', { email, password: senha })
+      : await apiAuth('token?grant_type=password', { email, password: senha });
+
+    if(!guardaSessao(j)){
+      /* signup com confirmação de e-mail não devolve token */
+      recado('Confirme seu e-mail.',
+             ' Enviamos um link para <b style="font-weight:600">' + email +
+             '</b>. Depois de confirmar, volte e toque em Entrar.', 'ok');
+      modoCriar = false; pintaModoLogin();
+      return;
+    }
+    $('senha').value = '';
+    recado();
+    roteia();
+  }catch(e){
+    log('login falhou: ' + e.message, 'err');
+    recado(modoCriar ? 'Não consegui criar a conta.' : 'Não consegui entrar.',
+           ' ' + traduzErroLogin(e.message));
+  }finally{
+    b.disabled = false;
+    pintaModoLogin();
+  }
+};
+
+/* O Supabase responde em inglês; quem lê é o motorista. */
+function traduzErroLogin(msg){
+  const m = String(msg).toLowerCase();
+  if(m.indexOf('invalid login') >= 0)       return 'E-mail ou senha não conferem.';
+  if(m.indexOf('already registered') >= 0)  return 'Esse e-mail já tem conta. Toque em Entrar.';
+  if(m.indexOf('email not confirmed') >= 0) return 'Confirme o e-mail pelo link que enviamos.';
+  if(m.indexOf('failed to fetch') >= 0)     return 'Sem internet agora. O login precisa de rede uma vez.';
+  return msg;
+}
+
+$('btnGoogle').onclick = () => {
+  const volta = location.href.split('#')[0];
+  location.href = SUPA + '/auth/v1/authorize?provider=google&redirect_to='
+                + encodeURIComponent(volta);
+};
+
+$('btnSairConta').onclick = () => {
+  if(confirm('Sair da conta? Você vai precisar entrar de novo, e isso exige internet.')) sair();
+};
+
+$('email').addEventListener('keydown', e => { if(e.key === 'Enter') $('senha').focus(); });
+$('senha').addEventListener('keydown', e => { if(e.key === 'Enter') $('btnEntrar').click(); });
 
 /* ---------- painel de requisições ----------
    Fica escondido do cliente e liga com 5 toques no logo. Gesto em vez de
@@ -1762,7 +2153,11 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
   });
 }
 
-/* decide a tela inicial: instalação, ou o controle */
+/* decide a tela inicial. pegaSessaoDaUrl() vem antes porque o Google volta
+   com os tokens no fragmento da URL. */
+pegaSessaoDaUrl();
+pintaModoLogin();
+confereCadastro();
 roteia();
 </script>
 </body>

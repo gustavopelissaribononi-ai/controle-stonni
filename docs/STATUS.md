@@ -161,6 +161,51 @@ Duas telas: conectar → controle.
 - Poll pausa com a tela em segundo plano e dispara na volta.
 - Guarda o último nome de aparelho usado.
 
+## Conta do cliente e cadastro do equipamento (10/09/2026)
+
+O app deixou de ser anônimo. Detalhes e o que falta fazer no Supabase estão em
+[`docs/2026-09-10-login-e-cadastro.md`](2026-09-10-login-e-cadastro.md). Resumo do que mudou
+no código:
+
+**Cinco telas agora**, decididas por `roteia()` sem nenhuma chamada de rede:
+
+```
+não instalado         -> telaInstalar
+sem sessão            -> telaLogin        (e-mail/senha ou Google)
+sem equipamento       -> telaCadastro     (código de barras + QR, uma vez)
+com tudo, sem conexão -> telaConectar
+conectado             -> telaControle
+```
+
+⚠️ **A regra que não pode ser quebrada: o controle do ar NUNCA espera a rede.** Login
+acontece uma vez, com internet; a sessão fica no `localStorage`; abrir o app e conectar no
+Bluetooth não faz nenhuma chamada. Consequências disso no código, todas deliberadas:
+
+- `renovaSessao()` falha **em silêncio** e não desloga. Sem rede, a sessão guardada segue
+  valendo — offline não pode expulsar o motorista do próprio ar.
+- `salvaEquipamento()` grava **local primeiro** e só depois tenta mandar. Se o Supabase
+  estiver fora, ou a tabela não existir ainda, o cadastro vale assim mesmo e sincroniza depois.
+- `renovaSessao()`, `buscaUsuario()` e `sincronizaEquipamento()` são chamados **depois** de a
+  tela certa já estar no ar, nunca antes.
+
+**Sem SDK.** Autenticação é `fetch()` direto em `/auth/v1/*`, como os outros apps do grupo.
+O app continua sem dependência externa e sem nada para baixar antes de abrir.
+
+**Um leitor só** (`leCodigo(formatos, titulo)`) serve aos dois usos — devolve o valor lido ou
+`null` se cancelaram. Código de barras aceita `ean_13`, `ean_8`, `upc_a`, `upc_e`, `code_128`,
+`code_39`, `itf` e `codabar`.
+
+### Descoberta útil: o servidor local aponta para staging
+
+`serve-staging.py` **reescreve a URL do Supabase** ao servir: o arquivo em disco tem
+`vishxwdxqiygbxmtpfoy` (produção), mas o navegador recebe `gxzhuewczlixksqrmjuk` (staging) —
+daí a faixa laranja. Teste local não alcança produção, de graça. Vale lembrar disso antes de
+concluir que "o login não funciona": pode ser só o staging não ter a configuração.
+
+⚠️ **Publicar este código faz o Supabase de produção passar a aceitar cadastro** de quem abrir
+o endereço. É o esperado num app de cliente final, mas é uma porta que se abre no dia do
+deploy — não no dia em que o primeiro cliente aparecer.
+
 ## Avisos ao cliente (10/09/2026)
 
 Dois fatos que o cliente precisa saber **antes** de tentar, e que geravam chamado à toa:
