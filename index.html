@@ -1815,6 +1815,7 @@ function desconectar(){
   recado();
   estado('', 'Desconectado');
   mostraTela(false);
+  if(atualizacaoPronta) aplicaAtualizacao();   // agora não derruba nada
 }
 
 /* ---------- eventos ---------- */
@@ -2180,23 +2181,53 @@ window.addEventListener('appinstalled', () => {
    instalado continua mostrando a versão antiga até alguém desinstalar — foi
    o que aconteceu no iPhone com o v7.
    ========================================================================== */
+let atualizacaoPronta = false, jaRecarregou = false;
+
+/* ⚠️ Recarregar com o ar conectado derruba o Bluetooth no meio do uso — e o
+   motorista não ia entender por que o controle "piscou" sozinho. A versão nova
+   já está no aparelho; segurar até desconectar não custa nada. */
+function aplicaAtualizacao(){
+  if(jaRecarregou) return;              // guarda contra laço de recarga
+  if(carTx){
+    atualizacaoPronta = true;
+    log('versão nova pronta; aplico quando desconectar', 'marco');
+    return;
+  }
+  jaRecarregou = true;
+  location.reload();
+}
+
+async function procuraAtualizacao(){
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    if(reg) await reg.update();
+  }catch(e){}                           // sem rede, fica para a próxima
+}
+
+const MEIA_HORA = 30 * 60 * 1000;
+
 if('serviceWorker' in navigator && location.protocol === 'https:'){
-  let jaRecarregou = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if(jaRecarregou) return;            // guarda contra laço de recarga
-    jaRecarregou = true;
-    location.reload();
-  });
+  navigator.serviceWorker.addEventListener('controllerchange', aplicaAtualizacao);
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => reg.update().catch(() => {}))   // procura versão nova toda abertura
       .catch(() => {});
   });
+
+  /* O app instalado fica aberto dias a fio no celular do motorista: só
+     procurar na carga significaria nunca mais procurar. */
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) return;
+    if(atualizacaoPronta && !carTx){ aplicaAtualizacao(); return; }
+    procuraAtualizacao();
+  });
+  setInterval(procuraAtualizacao, MEIA_HORA);
 }
 
 /* Carimba a versão em todo lugar que o cliente pode olhar. É a primeira
    pergunta do suporte: "qual versão está aí?" */
-const VERSAO_APP = 'v22';
+const VERSAO_APP = 'v23';
 ['versaoRodape', 'versaoInstalar', 'versaoConta']
   .forEach(id => { const e = $(id); if(e) e.textContent = VERSAO_APP; });
 
