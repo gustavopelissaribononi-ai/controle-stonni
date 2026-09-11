@@ -46,7 +46,7 @@ Não existe OAuth em nenhum app do grupo — este seria o primeiro. Precisa de:
 Supabase → Authentication → URL Configuration → **Redirect URLs**, incluindo os dois endereços:
 
 ```
-https://gustavopelissaribononi-ai.github.io/controle-stonni/
+https://leobononi2906.github.io/controle-stonni/
 https://controle.stonni.com.br/
 ```
 

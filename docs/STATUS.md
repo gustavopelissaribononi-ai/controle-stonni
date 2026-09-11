@@ -17,17 +17,17 @@ instalável na tela inicial do Android. O testador de bancada
 | Coisa | Caminho |
 |---|---|
 | Código | `C:\Aplicações da bononi\controle-stonni\` |
-| Repositório | `github.com/gustavopelissaribononi-ai/controle-stonni` (branch `main`) |
+| Repositório | `github.com/leobononi2906/controle-stonni` (branch `main`) |
 | Servidor local | `preview_start` → `app-stonni-ar` (porta **5286**) |
 | Script do servidor | `.claude\run-app-stonni.cmd` na pasta de docs |
-| **Teste (https real)** | `https://gustavopelissaribononi-ai.github.io/controle-stonni/` — GitHub Pages |
+| **Teste (https real)** | `https://leobononi2906.github.io/controle-stonni/` — GitHub Pages |
 | Endereço planejado | `https://controle.stonni.com.br` |
 | Deploy de produção | ainda **não publicado** — ver Publicação |
 
-⚠️ **Este é o único app do grupo fora da conta `leobononi2906`.** Os outros 16 repositórios
-ficam lá. Consequências práticas: a Vercel precisa ter esta conta conectada para importar, e
-quem procurar o app junto com os outros não vai achar. Se incomodar, o GitHub transfere o
-repositório em Settings → Transfer ownership, e aqui basta um `git remote set-url origin`.
+O repositório nasceu na conta pessoal `gustavopelissaribononi-ai` e foi **transferido para
+`leobononi2906` em 11/09/2026**, onde ficam os outros 16 apps do grupo. O endereço antigo
+responde com redirecionamento, mas **o endereço do GitHub Pages mudou de verdade** — quem
+tinha o app instalado pelo endereço antigo precisa reinstalar pelo novo.
 
 Arquivo único `index.html` (~43 KB) + `manifest.json` + `sw.js` + `vercel.json` + `icons/`.
 Sem build, sem dependência de pacote. Segue o padrão dos outros apps do grupo.
@@ -58,7 +58,7 @@ Subdomínio próprio na Vercel — seria o **primeiro domínio próprio do grupo
 apps rodam em `*.vercel.app`. Passos que dependem de acesso a conta:
 
 1. ~~Criar o repositório e dar push da `main`~~ ✅ **feito em 10/09/2026** —
-   `github.com/gustavopelissaribononi-ai/controle-stonni`
+   `github.com/leobononi2906/controle-stonni`
 2. Vercel → importar o repo, framework "Other", sem build. **Já dá um endereço
    `*.vercel.app` funcional** — use ele para instalar num Android e testar o Bluetooth com o
    equipamento antes de mexer em DNS.
