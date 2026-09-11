@@ -1,6 +1,10 @@
 -- ============================================================================
 --  controle-stonni · cadastro de equipamento do cliente final
---  Escrito em 10/09/2026. NÃO APLICADO — aguarda revisão.
+--  Escrito em 10/09/2026. ✅ APLICADO EM PRODUÇÃO em 11/09/2026.
+--  Conferido de fora com a anon key: a tabela responde 200 com lista vazia, e
+--  o insert anônimo volta 42501 (barrado pelo RLS) — e não 23503, que seria a
+--  chave estrangeira reclamando com o RLS desligado. A diferença entre os dois
+--  códigos é a única prova de que o RLS está mesmo ligado numa tabela vazia.
 --
 --  Contexto: o app do ar-condicionado passa a ter login do cliente final
 --  (e-mail/senha e Google). Depois de entrar, ele escaneia o código de barras

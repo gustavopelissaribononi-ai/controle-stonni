@@ -1,7 +1,8 @@
 # Login do cliente final e cadastro de equipamento
 
-> Decidido em 10/09/2026. **Nada foi aplicado no Supabase** — esta nota é o que
-> precisa ser revisado e executado lá, por quem tem acesso.
+> Decidido em 10/09/2026. **Aplicado em 11/09/2026**: tabela criada com RLS,
+> provedor Google configurado e Redirect URLs cadastradas. O que continua em
+> aberto está em Pendências, no fim.
 
 ## O que muda no produto
 
@@ -106,11 +107,15 @@ Recomendação: **sem confirmação** para não travar a instalação, e revisar
 
 ## Pendências
 
-- [ ] Revisar e aplicar `supabase/001_equipamentos.sql`
-- [ ] Configurar o provedor Google (Google Cloud + Supabase)
+- [x] ~~Revisar e aplicar `supabase/001_equipamentos.sql`~~ — 11/09/2026, RLS conferido de fora
+- [x] ~~Configurar o provedor Google (Google Cloud + Supabase)~~ — 11/09/2026, projeto `controle-stonni`
 - [ ] **Publicar o app no Google**: depende de página de privacidade, termos e
       verificação do `stonni.com.br` no Search Console (ver aviso acima)
-- [ ] Cadastrar as Redirect URLs
+- [x] ~~Cadastrar as Redirect URLs~~ — 11/09/2026, as quatro (com e sem `/**`).
+      ⚠️ O `Site URL` **não** foi alterado, e não pode ser: ele é o endereço dos
+      e-mails de todos os apps do grupo. Sem as Redirect URLs, o login com
+      Google despejava o cliente no Dashboard interno, já autenticado —
+      aconteceu de verdade antes de cadastrar.
 - [ ] Decidir a confirmação de e-mail
 - [ ] **Notificações**: precisa de chaves VAPID, guardar a inscrição de push por usuário e uma
       Edge Function para disparar. É uma frente à parte, não incluída aqui.
