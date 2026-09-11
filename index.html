@@ -525,9 +525,14 @@ input{font-family:inherit;font-size:16px}
       <svg class="ic"><use href="#i-baixar"/></svg> Instalar no celular
     </button>
 
+    <ul class="notas" id="temInstalado" hidden style="margin-top:0">
+      <li><svg class="ic"><use href="#i-ok"/></svg>
+          <span><b>Já está instalado neste celular.</b> Feche esta página e abra pelo
+          ícone da <b>Stonni</b> na tela inicial — o controle só funciona por lá.</span></li>
+    </ul>
+
     <div id="comoInstalar" hidden>
-      <p class="dica" id="comoTitulo" style="margin:0 0 12px">Se o botão não aparecer, instale
-         pelo menu do Chrome:</p>
+      <p class="dica" id="comoTitulo" style="margin:0 0 12px">Instale pelo menu do Chrome:</p>
 
       <ol class="passos" id="passosAndroid">
         <li>Tocar nos <b>três pontinhos</b> no canto do Chrome</li>
@@ -2109,13 +2114,33 @@ window.addEventListener('beforeinstallprompt', e => {
   convite = e;
   $('btnInstalar').hidden = false;
   $('comoInstalar').hidden = true;    // tem botão, não precisa do passo a passo
+  $('temInstalado').hidden = true;
 });
 
+/* O Chrome também não dispara beforeinstallprompt quando o app JÁ ESTÁ
+   INSTALADO — e aí o plano B aparecia mandando instalar de novo, que foi o que
+   o cliente viu no Android. getInstalledRelatedApps() é o único jeito de
+   descobrir isso de dentro do navegador; só responde se o manifest listar o
+   próprio app em related_applications, com URL absoluta — daí as duas lá,
+   uma por endereço de publicação. */
+async function temCopiaInstalada(){
+  if(!navigator.getInstalledRelatedApps) return false;
+  try{ return (await navigator.getInstalledRelatedApps()).length > 0; }
+  catch(e){ return false; }
+}
+
 /* O evento não vem em todo navegador. Se em 1,5 s não veio e a pessoa está no
-   navegador, mostra o caminho manual — senão ela fica olhando para uma tela
-   que pede para instalar sem dizer como. */
-setTimeout(() => {
-  if(!instalado() && !convite) $('comoInstalar').hidden = false;
+   navegador, decide o que mostrar — senão ela fica olhando para uma tela que
+   pede para instalar sem dizer como. */
+setTimeout(async () => {
+  if(instalado() || convite) return;
+  if(await temCopiaInstalada()){
+    $('temInstalado').hidden = false;
+    $('btnInstalar').hidden  = true;
+    $('comoInstalar').hidden = true;
+    return;
+  }
+  if(!convite) $('comoInstalar').hidden = false;
 }, 1500);
 
 $('btnInstalar').onclick = async () => {
@@ -2134,6 +2159,7 @@ window.addEventListener('appinstalled', () => {
   convite = null;
   $('btnInstalar').hidden = true;
   $('comoInstalar').hidden = true;
+  $('temInstalado').hidden = false;
   recado('Pronto, está instalado.', ' Feche esta página e abra pelo ícone da Stonni.', 'ok');
 });
 
