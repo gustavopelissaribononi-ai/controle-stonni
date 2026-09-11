@@ -471,6 +471,51 @@ mudou:
   ao subdomínio). O `.claude\run-app-stonni.cmd` foi ajustado junto — o nome curto 8.3 mudou
   de `APLICA~1` para `CONTRO~1`.
 
+## ⚠️ Deploy no ar ≠ atualizado no celular (11/09/2026)
+
+Sintoma: o cliente abria o app instalado e caía **direto na tela de parear**, sem
+login e sem cadastro do equipamento — telas que já estavam publicadas há horas. O
+arquivo no ar estava certo; o celular é que nunca recebia.
+
+Foram **dois** problemas empilhados, e o segundo escondia o primeiro:
+
+### 1. O `sw.js` dizia network-first, mas era cache-do-navegador-first
+
+```js
+fetch(req)   // ← passa pelo cache HTTP do navegador
+```
+
+O GitHub Pages manda `Cache-Control: max-age=600` no HTML. Então o `fetch` da
+casca era servido pelo cache do próprio navegador, e o service worker guardava
+essa cópia velha como se fosse a resposta da rede. Corrigido: a casca
+(navegação, `index.html`, `manifest.json`) busca com `cache: 'no-store'`.
+Ícones e fontes continuam vindo do cache — ali cache é o que se quer.
+
+> Vale para qualquer app do grupo publicado no GitHub Pages. Na Vercel o
+> `vercel.json` já manda `no-cache` no HTML, então o mesmo código não
+> apresentava o sintoma lá — o que torna isso ainda mais fácil de não ver.
+
+### 2. Não dava para saber qual versão estava rodando
+
+Passamos tempo discutindo sintoma sem conseguir responder "qual versão está no
+celular?". Agora tem um carimbo (`v23`) no rodapé da tela de instalação, no da
+conta e no do controle. **Bumpar `VERSAO_APP` junto com `VERSAO` do `sw.js`.**
+
+### 3. Só procurava versão nova na carga da página
+
+O app instalado fica aberto dias no celular do motorista: procurar só na carga
+significava, para quem nunca fecha, nunca atualizar. Agora procura ao abrir, a
+cada volta para o primeiro plano, e a cada 30 minutos.
+
+### A trava que não pode sair
+
+⚠️ **A recarga era incondicional.** Se a versão nova chegasse com o Bluetooth
+conectado, o controle caía no meio do uso, sozinho, sem explicação nenhuma para
+quem está dirigindo. Hoje `aplicaAtualizacao()` verifica `carTx` primeiro: com o
+ar conectado a atualização fica guardada em `atualizacaoPronta` e só é aplicada
+no primeiro momento seguro — ao desconectar, ou ao voltar ao app já
+desconectado. Verificado nos dois caminhos.
+
 ## Pendências
 
 - [ ] **Confirmar o display com a polaridade nova** (`10 / 1` apaga, `10 / 2` acende). A
