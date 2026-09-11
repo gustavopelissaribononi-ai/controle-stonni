@@ -1269,6 +1269,20 @@ async function apiAuth(caminho, corpo){
   return j;
 }
 
+/* Para onde o Supabase devolve o cliente: depois do Google, e depois do link de
+   confirmação de e-mail.
+
+   ⚠️ Sem mandar isto, o Supabase usa o Site URL dele — que é COMPARTILHADO com
+   os outros apps do grupo e aponta para o Dashboard interno. Sem o parâmetro, o
+   cliente que confirma o e-mail cai no Dashboard da Bononi. Já aconteceu com o
+   login do Google, em 11/09/2026, antes das Redirect URLs serem cadastradas.
+
+   origin + pathname, e não location.href: o manifest abre o app instalado em
+   ?src=pwa, e essa query entraria junto. A lista de endereços permitidos do
+   Supabase compara o texto inteiro — com a query, volta "requested path is
+   invalid" só no app instalado, que é onde ninguém consegue ver o erro. */
+const enderecoDeVolta = () => location.origin + location.pathname;
+
 function guardaSessao(j){
   if(!j || !j.access_token) return false;
   sessao = {
@@ -1946,7 +1960,8 @@ $('btnEntrar').onclick = async () => {
   b.textContent = modoCriar ? 'Criando…' : 'Entrando…';
   try{
     const j = modoCriar
-      ? await apiAuth('signup', { email, password: senha })
+      ? await apiAuth('signup?redirect_to=' + encodeURIComponent(enderecoDeVolta()),
+                      { email, password: senha })
       : await apiAuth('token?grant_type=password', { email, password: senha });
 
     if(!guardaSessao(j)){
@@ -1981,14 +1996,8 @@ function traduzErroLogin(msg){
 }
 
 $('btnGoogle').onclick = () => {
-  /* origin + pathname, e não location.href: o manifest abre o app instalado em
-     ?src=pwa, e esse pedaço entraria no redirect_to. A lista de endereços
-     permitidos do Supabase compara o texto inteiro — com a query junto, o
-     Google volta com "requested path is invalid" só no app instalado, que é
-     justamente onde ninguém consegue abrir o console para ver o erro. */
-  const volta = location.origin + location.pathname;
   location.href = SUPA + '/auth/v1/authorize?provider=google&redirect_to='
-                + encodeURIComponent(volta);
+                + encodeURIComponent(enderecoDeVolta());
 };
 
 $('btnSairConta').onclick = () => {
@@ -2227,7 +2236,7 @@ if('serviceWorker' in navigator && location.protocol === 'https:'){
 
 /* Carimba a versão em todo lugar que o cliente pode olhar. É a primeira
    pergunta do suporte: "qual versão está aí?" */
-const VERSAO_APP = 'v23';
+const VERSAO_APP = 'v24';
 ['versaoRodape', 'versaoInstalar', 'versaoConta']
   .forEach(id => { const e = $(id); if(e) e.textContent = VERSAO_APP; });
 

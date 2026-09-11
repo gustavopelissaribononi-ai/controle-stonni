@@ -1,0 +1,17 @@
+# ============================================================
+#  Trava para hospedagem Apache/LiteSpeed (Hostinger).
+#
+#  Em 11/09/2026 o controle.stonni.com.br estava servindo, com HTTP 200:
+#    /docs/STATUS.md          -> o protocolo inteiro, comando por comando
+#    /bancada/testador-ble.html -> o testador que manda quadro bruto
+#    /README.md
+#  A pasta inteira do projeto tinha sido enviada, e nao so o app.
+#
+#  O jeito certo e enviar apenas os arquivos do app (ver LEIAME.md nesta pasta).
+#  Este arquivo e a segunda barreira: mesmo que alguem envie a pasta inteira de
+#  novo, estes caminhos param de responder. Nao substitui apagar os arquivos.
+# ============================================================
+
+RedirectMatch 404 ^/(docs|bancada|arte|supabase|\.github|\.git|node_modules)(/|$)
+RedirectMatch 404 \.(md|sql|yml|yaml|py|log)$
+RedirectMatch 404 ^/(\.vercelignore|\.gitignore|vercel\.json)$
